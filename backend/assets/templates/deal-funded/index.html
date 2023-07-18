@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal funded</title>
+</head>
+    <div><h1>Deal funded</h1></div>
+    <div>Title: {{title}}</div>
+    <div>Description: {{description}}</div>
+    <div>Amount: {{amount}}</div>
+    <div>Passcode: {{passcode}}</div>
+    <div>{{#if buyer_email}}</div>
+    <div>Your email address: {{buyer_email}}</div>
+    <div>{{/if}}</div>
+    <div>{{#if seller_email}}</div>
+    <div>Seller's email address: {{seller_email}}</div>
+    <div>{{/if}}</div>
+    <div>{{#if tx_hash}}</div>
+    <div>Transaction hash: {{tx_hash}}</div>
+    <div>{{/if}}</div>
+    <div><a href="http://localhost:3000/dashboard?id={{id}}&email={{sendToEmail}}">Click here</a>{{ message }}</div>
+</body>
+</html>

@@ -1,0 +1,63 @@
+.newDeal {
+  margin-left: 18vw;
+  font-family: "Calibri";
+  font-size: 14px;
+  color: #464a53;
+  margin-top: 10vh;
+}
+
+.heading {
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.label {
+  color: #848484;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.formDiv {
+  width: 28vw;
+  margin: auto;
+  text-align: left;
+  padding: 20px;
+  border: 2px solid #e5e5e5;
+}
+
+.customInput {
+  border-radius: 0px !important;
+  color: #abafb3;
+}
+
+.inputWidth {
+  display: inline !important;
+  width: 70% !important;
+}
+
+.acceptBtn {
+  background: #42CF81 !important;
+  border-radius: 5px;
+  border: none !important;
+}
+
+.declineBtn {
+  background: #E3331B !important;
+  border-radius: 5px;
+  border: none !important;
+  width: 48% !important;
+}
+
+.error {
+  color: rgb(249, 93, 93);
+}
+
+.text {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.btnDiv{
+    display: flex;
+}

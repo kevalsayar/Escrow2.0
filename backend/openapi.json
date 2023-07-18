@@ -1,0 +1,1049 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Escrow API",
+        "version": "1.0.0",
+        "description": "Escrow API",
+        "contact": {
+            "email": "keval.sayar@globalvoxinc.com",
+            "name": "Keval Sayar"
+        }
+    },
+    "tags": [
+        {
+            "name": "BSC Deals",
+            "description": "Deal operations"
+        },
+        {
+            "name": "Tron Deals",
+            "description": "Deal operations"
+        },
+        {
+            "name": "Solana Deals",
+            "description": "Deal operations"
+        }
+    ],
+    "servers": [
+        {
+            "url": "{basePath}",
+            "description": "Main Server",
+            "variables": {
+                "basePath": {
+                    "default": "/v1",
+                    "enum": [
+                        "/v1"
+                    ]
+                }
+            }
+        }
+    ],
+    "components": {
+        "responses": {
+            "200": {
+                "description": "Request has succeeded.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "default": 200
+                                },
+                                "status": {
+                                    "type": "boolean",
+                                    "default": true
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "default": "The resource has been fetched and is transmitted in the data body."
+                                },
+                                "data": {
+                                    "type": "object",
+                                    "default": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "201": {
+                "description": "New resource created.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "default": 201
+                                },
+                                "status": {
+                                    "type": "boolean",
+                                    "default": true
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "default": "New resource created."
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "400": {
+                "description": "Bad Request.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "default": 400
+                                },
+                                "status": {
+                                    "type": "boolean",
+                                    "default": false
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "default": "Bad Request"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "404": {
+                "description": "Resource Not Found.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "default": 404
+                                },
+                                "status": {
+                                    "type": "boolean",
+                                    "default": false
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "default": "Can not map the specified URl to a resource!"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "500": {
+                "description": "Internal Server Error.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "default": 500
+                                },
+                                "status": {
+                                    "type": "boolean",
+                                    "default": false
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "default": "Server encountered an unexpected condition that prevented it from fulfilling the request!"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "paths": {
+        "/deal/bsc": {
+            "post": {
+                "tags": [
+                    "BSC Deals"
+                ],
+                "description": "Create a new deal in Escrow.",
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for creating a new deal.",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "title": "Deal",
+                                "properties": {
+                                    "deal_title": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "example": "Escrow Title Sample",
+                                        "nullable": false
+                                    },
+                                    "deal_description": {
+                                        "type": "integer",
+                                        "format": "string",
+                                        "example": "This is a sample Escrow deal description.",
+                                        "nullable": false
+                                    },
+                                    "deal_token": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "example": "USDT",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/201"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            },
+            "get": {
+                "description": "Get all or a specific deal's information.",
+                "tags": [
+                    "BSC Deals"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "deal_id",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "wallet_address",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "page_num",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "record_limit",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "filter",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/200"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/bsc/search": {
+            "post": {
+                "tags": [
+                    "BSC Deals"
+                ],
+                "description": "search deals on the basis of Title, Description, Fund TxHash/ Release TxHash, Buyer/Seller wallet address",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page_num",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "record_limit",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for search route",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "searchValue": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "nullable": false
+                                    },
+                                    "wallet_address": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "nullable": false
+                                    },
+                                    "filter": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/200"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/bsc/accept": {
+            "get": {
+                "description": "Checks if a particular deal's link is active or inactive.",
+                "tags": [
+                    "BSC Deals"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "deal_id",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/200"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/tron": {
+            "post": {
+                "tags": [
+                    "Tron Deals"
+                ],
+                "description": "Create a new deal in Escrow.",
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for creating a new deal.",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "title": "Deal",
+                                "properties": {
+                                    "deal_title": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "example": "Escrow Title Sample",
+                                        "nullable": false
+                                    },
+                                    "deal_description": {
+                                        "type": "integer",
+                                        "format": "string",
+                                        "example": "This is a sample Escrow deal description.",
+                                        "nullable": false
+                                    },
+                                    "deal_token": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "example": "USDT",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/201"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            },
+            "get": {
+                "description": "Get all or a specific deal's information.",
+                "tags": [
+                    "Tron Deals"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "deal_id",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "wallet_address",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "page_num",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "record_limit",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "filter",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/200"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/tron/search": {
+            "post": {
+                "tags": [
+                    "Tron Deals"
+                ],
+                "description": "search deals on the basis of Title, Description, Fund TxHash/ Release TxHash, Buyer/Seller wallet address",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page_num",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "record_limit",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for search route",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "searchValue": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "nullable": false
+                                    },
+                                    "wallet_address": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "nullable": false
+                                    },
+                                    "filter": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/200"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/tron/accept": {
+            "get": {
+                "description": "Checks if a particular deal's link is active or inactive.",
+                "tags": [
+                    "Tron Deals"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "deal_id",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/200"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/sol": {
+            "post": {
+                "tags": [
+                    "Solana Deals"
+                ],
+                "description": "Create a new deal in Escrow.",
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for creating a new deal.",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "title": "Deal",
+                                "properties": {
+                                    "deal_title": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "example": "Escrow Title Sample",
+                                        "nullable": false
+                                    },
+                                    "deal_description": {
+                                        "type": "integer",
+                                        "format": "string",
+                                        "example": "This is a sample Escrow deal description.",
+                                        "nullable": false
+                                    },
+                                    "escrow_amount": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "example": "10000000000",
+                                        "nullable": false
+                                    },
+                                    "deal_token": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "example": "SOL",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/201"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            },
+            "get": {
+                "description": "Get all or a specific deal's information.",
+                "tags": [
+                    "Solana Deals"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "deal_id",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "wallet_address",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "page_num",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "record_limit",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "filter",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/200"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/sol/search": {
+            "post": {
+                "tags": [
+                    "Solana Deals"
+                ],
+                "description": "search deals on the basis of Title, Description, Fund TxHash/ Release TxHash, Buyer/Seller wallet address",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page_num",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "record_limit",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": false
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for search route",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "searchValue": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "nullable": false
+                                    },
+                                    "wallet_address": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "nullable": false
+                                    },
+                                    "filter": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/200"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/sol/accept": {
+            "get": {
+                "description": "Checks if a particular deal's link is active or inactive.",
+                "tags": [
+                    "Solana Deals"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "deal_id",
+                        "schema": {
+                            "type": "string",
+                            "nullable": false
+                        },
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/200"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/sol/setID": {
+            "patch": {
+                "tags": [
+                    "Solana Deals"
+                ],
+                "description": "Set the Escrow Account Id and Public Key for a particular escrow.",
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for setting escrow account ID for a deal.",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "title": "Deal",
+                                "properties": {
+                                    "deal_id": {
+                                        "type": "integer",
+                                        "format": "integer",
+                                        "example": "lfb08bg5swax73y8mb",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/201"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/sol/deposit": {
+            "patch": {
+                "tags": [
+                    "Solana Deals"
+                ],
+                "description": "Set the buyer wallet address for a deal in Escrow.",
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for updating status to FUNDED for a deal.",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "title": "Deal",
+                                "properties": {
+                                    "deal_id": {
+                                        "type": "integer",
+                                        "format": "integer",
+                                        "example": "lfb08bg5swax73y8mb",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/201"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/sol/acceptDeal": {
+            "patch": {
+                "tags": [
+                    "Solana Deals"
+                ],
+                "description": "Set the seller wallet address for a deal in Escrow.",
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for updating status to ACCEPTED for a deal.",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "title": "Deal",
+                                "properties": {
+                                    "deal_id": {
+                                        "type": "integer",
+                                        "format": "integer",
+                                        "example": "lfb08bg5swax73y8mb",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/201"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/sol/releaseFund": {
+            "patch": {
+                "tags": [
+                    "Solana Deals"
+                ],
+                "description": "Set the released by and released amount for a deal in Escrow.",
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for updating status to RELEASED for a deal.",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "title": "Deal",
+                                "properties": {
+                                    "deal_id": {
+                                        "type": "integer",
+                                        "format": "integer",
+                                        "example": "lfb08bg5swax73y8mb",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/201"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/deal/sol/withdrawFund": {
+            "patch": {
+                "tags": [
+                    "Solana Deals"
+                ],
+                "description": "Set the released by and released amount for a deal in Escrow.",
+                "requestBody": {
+                    "required": true,
+                    "description": "request body for updating status to REFUNDED for a deal.",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "title": "Deal",
+                                "properties": {
+                                    "deal_id": {
+                                        "type": "integer",
+                                        "format": "integer",
+                                        "example": "lfb08bg5swax73y8mb",
+                                        "nullable": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/201"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        }
+    }
+}

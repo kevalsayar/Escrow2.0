@@ -1,0 +1,30 @@
+@import url("https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap");
+/* @font-face {
+  font-family: 'Calibri';
+  src: local('Calibri'), url(./assets/fonts/Calibri/CalibriRegular.ttf) format('truetype');
+} */
+
+* {
+  box-sizing: border-box;
+}
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  /* use libre font by uncomment code */
+  /* font-family: "Libre Baskerville", serif ; */
+  /* background-image: url("assets/images/bg-dark02.jpg"); */
+  background-size: cover;
+  background-repeat: no-repeat;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

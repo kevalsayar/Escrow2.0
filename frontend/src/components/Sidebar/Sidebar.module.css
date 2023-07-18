@@ -1,0 +1,76 @@
+.sidebar{
+    position: fixed;
+    width: 16vw;
+    height: 100%;
+    left: 0px;
+    top: -1px;
+    /* box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25); */
+    border: 1px solid #dee2e6;
+}
+
+.escrowLogo{
+    position: absolute;
+    top: 30px;
+    width: 10vw;
+    left: 2vw;
+}
+
+.navbar{
+    cursor: pointer;
+    padding-top: 18px;
+    width: 100%;
+    height: 56px;
+    left: 0px;
+    top: 120px;
+    mix-blend-mode: normal;
+    text-align: left;
+    padding-left: 2vw;
+}
+
+.active{
+    background-color: #FFFAED;
+}
+
+.activeText{
+    color: #EEB200 !important;
+}
+
+.text{
+    color: #6A707E;
+    font-family: 'Calibri';
+    font-weight: 400;
+    font-size: 16px;
+    margin-left: 20px;
+}
+
+.list{
+    margin-top: 8vw;
+}
+
+.bottom{
+    width: 100%;
+    height: 2px;
+    background: #ABAFB3;
+    mix-blend-mode: normal;
+    opacity: 0.4;
+}
+
+.bottomLogout{
+    width: 100%;
+    height: 2px;
+    bottom: 75px;
+    position: absolute;
+    background: #ABAFB3;
+    opacity: 0.4;
+}
+
+.logout{
+    bottom: 15px;
+    position: absolute;
+    cursor: pointer;
+    padding-top: 18px;
+    width: 100%;
+    height: 56px;
+    text-align: left;
+    padding-left: 2vw;
+}

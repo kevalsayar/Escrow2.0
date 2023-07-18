@@ -1,0 +1,82 @@
+.newDeal {
+  margin-left: 18vw;
+  font-family: "Calibri";
+  font-size: 14px;
+  color: #464a53;
+  margin-top: 10vh;
+}
+
+.heading {
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.image {
+  text-align: center;
+}
+
+.imageWidth {
+  width: 10vw;
+}
+
+.label {
+  color: #848484;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.formDiv {
+  width: 28vw;
+  margin: auto;
+  text-align: left;
+  padding: 20px;
+  border: 2px solid #e5e5e5;
+}
+
+.customInput {
+  border-radius: 0px !important;
+  color: #abafb3;
+}
+
+.inputWidth {
+  display: inline !important;
+  width: 70% !important;
+}
+
+.nextBtn {
+  background: #eeb200 !important;
+  border-radius: 5px;
+  border: none !important;
+  width: 100% !important;
+}
+
+.nextBtn:hover {
+  background: #eeb200;
+  border-radius: 5px;
+}
+
+.nextBtn:active {
+  background: #eeb200;
+  border-radius: 5px;
+}
+
+.error {
+  color: rgb(249, 93, 93);
+}
+
+.text {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.block {
+  display: block;
+}
+
+.copySpan {
+  cursor: pointer;
+  height: 42px;
+  /* margin: 0.8rem 0; */
+  padding: 0.6rem 0.5rem;
+}
