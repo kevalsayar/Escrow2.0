@@ -76,7 +76,7 @@ Before you begin, ensure you have met the following requirements:
   ```
 - **MySQL:** This project uses MySQL as the database. Make sure you have MySQL installed and running. You can download MySQL from [mysql.com.](https://www.mysql.com/) Follow the installation instructions for your operating system.
 
-### Installation
+# Installation
 
 Now that you have met the prerequisites, follow these steps to install and run the project:
 
@@ -94,17 +94,17 @@ git clone https://github.com/kevalsayar/Escrow2.0.git
 git clone git@github.com:kevalsayar/Escrow2.0.git
 ```
 
-# Navigate to the project directory
+## Navigate to the project directory
 ```bash
 cd backend
 ```
 
-# Install dependencies
+## Install dependencies
 ```bash
 $ npm install
 ```
 
-# Configuration
+## Configuration
 
 ### 1. Environment Variables:
 Create a new file named .env in the root of the project. Copy the variable names from the example.env file and populate their values in the .env file.
