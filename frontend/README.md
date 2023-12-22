@@ -128,3 +128,6 @@ Now that you have met the prerequisites, follow these steps to install and run t
     ```bash
     $ npm start
     ```
+    Open http://localhost:3000 (or the appropriate port) to view the app in your browser.
+
+    Note: The development server may run on a different port if port 3000 is already in use. Check the terminal for the correct URL.
