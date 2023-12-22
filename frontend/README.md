@@ -85,6 +85,21 @@ Before you begin, ensure you have met the following requirements:
     ```bash
     git --version
     ```
+- **Blockchain Wallet Extensions:** 
+  - MetaMask (For Ethereum):
+
+    - Install the MetaMask extension for your browser.
+      - [Metamask for Chrome](https://metamask.io/download/)
+      
+  - Phantom (For Solana):
+  
+    - Install the Phantom extension for your browser.
+       - [Phantom for Chrome](https://phantom.app/download)
+
+  - TronLink (For TRON):
+
+    - Install the TronLink extension for your browser.
+       - [TronLink for Chrome](https://www.tronlink.org/)
 
 # Installation
 
