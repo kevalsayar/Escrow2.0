@@ -2,8 +2,12 @@
 
 ![Project Logo](https://scro.theblockchain.team/static/media/escrowproject-logo.bf84d5bf18f01f60a109.webp)
 
- v2.0.0
- 
+v2.0.0
+
+[![Node.js](https://img.shields.io/badge/node-%5E14.0.0-green)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+[![npm](https://img.shields.io/badge/npm-%5E6.0.0-orange)](https://www.npmjs.com/)
+
 ## Overview
 
 Our project introduces a cutting-edge blockchain-based escrow system designed to facilitate secure and transparent transactions between buyers and sellers. Leveraging the power of smart contracts, our system allows users to create and engage in deals with confidence, ensuring that funds are locked in escrow until predetermined conditions are met.
@@ -67,6 +71,7 @@ Before you begin, ensure you have met the following requirements:
   ```bash
   npm -v
   ```
+
 - **MySQL:** This project uses MySQL as the database. Make sure you have MySQL installed and running. You can download MySQL from [mysql.com.](https://www.mysql.com/) Follow the installation instructions for your operating system.
 
 # Installation
@@ -88,11 +93,13 @@ git clone git@github.com:kevalsayar/Escrow2.0.git
 ```
 
 ## Navigate to the project directory
+
 ```bash
 cd backend
 ```
 
 ## Install dependencies
+
 ```bash
 $ npm install
 ```
@@ -100,14 +107,21 @@ $ npm install
 ## Configuration
 
 ### 1. Environment Variables:
+
 Create a new file named .env in the root of the project. Copy the variable names from the example.env file and populate their values in the .env file.
 
 ## Start server
+
 ```bash
 $ npm start
 ```
 
+ Open http://localhost:3000 (or the appropriate port) to view the app in your browser.
+
+Note: The development server may run on a different port if port 3000 is already in use. Check the terminal for the correct URL.
+
 ## Generate API documentation
+
 ```bash
 $ npm run gen:doc
 ```
