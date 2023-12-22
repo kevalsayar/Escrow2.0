@@ -53,17 +53,10 @@ Our blockchain-based escrow system revolutionizes the way transactions are condu
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-- [Usage](#usage)
-  - [Configuration](#configuration)
-  - [API Endpoints](#api-endpoints)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
 
-## Getting Started
+# Getting Started
 
-### Prerequisites
+# Prerequisites
 
 Before you begin, ensure you have met the following requirements:
 
@@ -83,14 +76,14 @@ Now that you have met the prerequisites, follow these steps to install and run t
 **Clone with HTTPS:**
 
 ```bash
-# Clone the repository with HTTPS
+# Clone the repository with HTTPS.
 git clone https://github.com/kevalsayar/Escrow2.0.git
 ```
 
 **Clone with SSH:**
 
 ```bash
-# Clone the repository with HTTPS
+# Clone the repository with SSH.
 git clone git@github.com:kevalsayar/Escrow2.0.git
 ```
 
