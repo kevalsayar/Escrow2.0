@@ -95,7 +95,7 @@ git clone git@github.com:kevalsayar/Escrow2.0.git
 ## Navigate to the project directory
 
 ```bash
-cd backend
+cd Escrow2.0/backend
 ```
 
 ## Install dependencies

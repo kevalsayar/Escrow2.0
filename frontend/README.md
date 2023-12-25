@@ -124,7 +124,7 @@ Now that you have met the prerequisites, follow these steps to install and run t
 2. Navigate to the project directory:
 
     ```bash
-    cd frontend
+    cd Escrow2.0/frontend
     ```
 3. Install dependencies
 
