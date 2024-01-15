@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import SideBar from "../../../components/Sidebar";
-import Header from "../../../components/TronLink/Header";
+import Header from "../../../components/Header";
+import tronLinkIcon from "../../../assets/icons/tronLinkIcon.png";
 import styles from "./transactions.module.css";
 import searchIcon from "../../../assets/icons/searchIcon.png";
 import "bootstrap/js/src/collapse.js";
@@ -175,7 +176,7 @@ const Transactions = () => {
   return (
     <React.Fragment>
       <SideBar activeProp="Transactions" />
-      <Header />
+      <Header account={user} walletIcon={tronLinkIcon} />
       <div className={styles.main}>
         <div className={`${styles.heading} mt-3 ms-3 mb-2`}>
           <div className={`${styles.search} me-3`}>

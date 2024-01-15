@@ -4,6 +4,7 @@ import {
   API_METHODS,
   BGCOLOR,
   ROUTES,
+  TOAST_RESPONSE,
   TOOLTIP_TIMER,
 } from "../../../utils/constants.utils";
 import { useSolana } from "../../../context/solaServiceContext";
@@ -15,6 +16,8 @@ import {
   APIcall,
   displayWalletAddress,
   copyToClipboard,
+  formatDate,
+  toastMessage,
 } from "../../../utils/helper.utils";
 
 function CustomAccordion(props) {
@@ -42,60 +45,35 @@ function CustomAccordion(props) {
   useEffect(() => {
     convertFromLamport(obj?.escrow_amount);
   }, [obj]);
-  const formatDate = (dateString) => {
-    let date = new Date(dateString);
-    let now_utc = Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
-      date.getUTCHours(),
-      date.getUTCMinutes(),
-      date.getUTCSeconds()
-    );
-
-    let toString = new Date(now_utc).toUTCString();
-    return toString.split(" ").slice(1).join(" ");
-  };
 
   const handleClick = () => {
     if (ref.current?.className?.includes("collapsed")) setShow(false);
     else setShow(true);
   };
 
-  const handleWithdrawClick = async () => {
-    setShowWithdrawModal(false);
-    setDisableWithdraw(true);
-    if (await withdrawFund(obj?.id)) {
-      await APIcall(API_METHODS.PATCH, ROUTES.SOLDEALS.withdrawFund, {
-        deal_id: obj?.id,
-      })
-        .then(function (response) {
-          setDisableWithdraw(false);
-          updateStatus();
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    }
-    setDisableWithdraw(false);
-  };
+  const handleAction = async (
+    modalSetter,
+    disableSetter,
+    contractFunction,
+    ApiRoute
+  ) => {
+    try {
+      modalSetter(false);
+      disableSetter(true);
 
-  const handleReleaseClick = async () => {
-    setShowReleaseModal(false);
-    setDisableRelease(true);
-    if (await releaseFund(obj?.id)) {
-      await APIcall(API_METHODS.PATCH, ROUTES.SOLDEALS.releaseFund, {
+      const actionTxHash = await contractFunction(obj?.id);
+
+      const actionRes = await APIcall(API_METHODS.PATCH, ApiRoute, {
         deal_id: obj?.id,
-      })
-        .then(function (response) {
-          setDisableRelease(false);
-          updateStatus();
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+        txHash: actionTxHash,
+      });
+
+      updateStatus();
+    } catch (error) {
+      toastMessage(error.message, "error", TOAST_RESPONSE.ERROR);
+    } finally {
+      disableSetter(false);
     }
-    setDisableRelease(false);
   };
 
   return (
@@ -310,7 +288,17 @@ function CustomAccordion(props) {
               >
                 Close
               </Button>
-              <Button variant="primary" onClick={handleReleaseClick}>
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  await handleAction(
+                    setShowReleaseModal,
+                    setDisableRelease,
+                    releaseFund,
+                    ROUTES.SOLDEALS.releaseFund
+                  );
+                }}
+              >
                 Proceed
               </Button>
             </Modal.Footer>
@@ -335,7 +323,17 @@ function CustomAccordion(props) {
               >
                 Close
               </Button>
-              <Button variant="primary" onClick={handleWithdrawClick}>
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  await handleAction(
+                    setShowWithdrawModal,
+                    setDisableWithdraw,
+                    withdrawFund,
+                    ROUTES.SOLDEALS.withdrawFund
+                  );
+                }}
+              >
                 Proceed
               </Button>
             </Modal.Footer>

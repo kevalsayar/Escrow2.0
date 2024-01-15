@@ -1,5 +1,5 @@
 import ReactPaginate from "react-paginate";
-import styles from "../views/Binance/Transactions/transactions.module.css";
+import styles from "../views/Sepolia/Transactions/transactions.module.css";
 
 const Pagination = ({ totalPages, currentPage = 0, paginate }) => {
   return (

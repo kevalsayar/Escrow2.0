@@ -1,17 +1,39 @@
 const joi = require("joi"),
-  deal_title = joi.string().min(5).label("Title"),
-  deal_description = joi.string().min(10).label("Description"),
+  deal_title = joi.string().min(5).label("Title").messages({
+    "any.required": "Deal Title is a required parameter!",
+    "string.min": "Title length must be at least 5 characters long",
+  }),
+  deal_description = joi.string().min(10).label("Description").messages({
+    "any.required": "Deal Description is a required parameter!",
+    "string.min": "Description length must be at least 10 characters long!",
+  }),
   deal_id = joi.string().label("Deal Id").messages({
     "any.required": "Deal ID is a required parameter!",
   }),
-  wallet_address = joi.string().label("Wallet Address"),
-  escrow_amount = joi.number().unsafe().min(1000000000).label("Escrow Amount"),
-  deal_token = joi.string().valid("SOL").label("Deal Token"),
+  wallet_address = joi.string().label("Wallet Address").messages({
+    "any.required": "Wallet Address is a required parameter!",
+    "string.pattern.base": "Wallet Address is not a valid Ethereum address!",
+  }),
+  escrow_amount = joi
+    .number()
+    .unsafe()
+    .min(1000000000)
+    .label("Escrow Amount")
+    .messages({
+      "any.required": "Escrow Amount is a required parameter!",
+      "number.min": "Escrow Amount must be greater than or equal to 1000000000",
+    }),
+  deal_token = joi.string().valid("SOL").label("Deal Token").messages({
+    "any.required": "Deal Token is a required parameter!",
+    "any.only": "Deal Token must be SOL!",
+  }),
   page_num = joi.number().min(1).label("Page Number").messages({
     "any.required": "Page Number is a required parameter!",
+    "number.min": "Page Number must be greater than or equal to 1",
   }),
   record_limit = joi.number().min(1).label("Record Limit").messages({
     "any.required": "Record Limit is a required parameter!",
+    "number.min": "Record Limit must be greater than or equal to 1",
   }),
   filter = joi
     .string()
@@ -19,51 +41,73 @@ const joi = require("joi"),
     .label("Filter String")
     .messages({
       "any.required": "Filter is a required parameter!",
+      "any.only": "Filter String must be one of [buyer_wallet, seller_wallet]",
     }),
-  searchValue = joi.string().min(3).label("Search Value");
-
-const valSchemas = function () {
-  const addDealReqSchema = joi.object({
-    deal_title: deal_title.required().messages({
-      "any.required": "Deal Title is a required parameter!",
-    }),
-    deal_description: deal_description.required().messages({
-      "any.required": "Deal Description is a required parameter!",
-    }),
-    escrow_amount: escrow_amount.required().messages({
-      "any.required": "Escrow Amount is a required parameter!",
-    }),
-    deal_token: deal_token.required().messages({
-      "any.required": "Deal Token is a required parameter!",
-    }),
+  searchValue = joi.string().min(3).label("Search Value").messages({
+    "any.required": "Search Value is a required parameter!",
+    "string.min": "Search Value must be at least 3 characters long!",
+  }),
+  txHash = joi.string().label("Transaction Hash").messages({
+    "any.required": "Transaction Hash is a required parameter",
   });
 
-  const getDealSchema = joi
-    .object({
-      deal_id: deal_id,
-      wallet_address: wallet_address,
-      page_num: page_num,
-      record_limit: record_limit,
-      filter: filter,
-    })
-    .when(".deal_id", {
-      is: joi.exist(),
-      then: joi.object({ wallet_address: wallet_address.optional() }),
-      otherwise: joi.object({ wallet_address: wallet_address.required() }),
-    })
-    .when(".wallet_address", {
-      is: joi.exist(),
-      then: joi.object({
-        filter: filter.required(),
-        page_num: page_num.required(),
-        record_limit: record_limit.required(),
+const validationSchemas = (() => {
+  const addDealReqSchema = joi.object({
+    deal_title: deal_title.required(),
+    deal_description: deal_description.required(),
+    deal_token: deal_token.required(),
+    escrow_amount: escrow_amount.required(),
+  });
+
+  const getDealSchema = joi.object({
+    wallet_address: joi
+      .alternatives()
+      .conditional("deal_id", {
+        is: joi.exist(),
+        then: joi.forbidden(),
+        otherwise: joi.required(),
+      })
+      .messages({
+        "any.unknown": "Deal Id and Wallet Address cannot be allowed together!",
       }),
-      otherwise: {
-        filter: filter.optional(),
-        page_num: page_num.optional(),
-        record_limit: record_limit.optional(),
-      },
-    });
+    deal_id: joi
+      .alternatives()
+      .conditional("wallet_address", {
+        is: joi.exist(),
+        then: joi.forbidden(),
+        otherwise: joi.required(),
+      })
+      .messages({
+        "any.unknown": "Deal Id and Wallet Address cannot be allowed together!",
+      }),
+    page_num: joi
+      .when("wallet_address", {
+        is: joi.exist(),
+        then: joi.required(),
+        otherwise: joi.forbidden(),
+      })
+      .messages({
+        "any.required": "Page number is required!",
+      }),
+    record_limit: joi
+      .when("wallet_address", {
+        is: joi.exist(),
+        then: joi.required(),
+        otherwise: joi.forbidden(),
+      })
+      .messages({
+        "any.required": "Record Limit is required!",
+      }),
+    filter: joi
+      .when("wallet_address", {
+        is: joi.exist(),
+        then: joi.required(),
+        otherwise: joi.forbidden(),
+      })
+      .messages({
+        "any.required": "Filter is required!",
+      }),
+  });
 
   const paginationParams = joi.object({
     page_num: page_num.required(),
@@ -71,18 +115,17 @@ const valSchemas = function () {
   });
 
   const searchReqSchema = joi.object({
-    searchValue: searchValue.required().messages({
-      "any.required": "Search Value is a required parameter!",
-    }),
-    wallet_address: wallet_address.required().messages({
-      "any.required": "Wallet Address is a required parameter!",
-      "string.pattern.base": "Wallet Address is not a valid Ethereum address!",
-    }),
+    searchValue: searchValue.required(),
+    wallet_address: wallet_address.required(),
     filter: filter.required(),
   });
 
-  const acceptDealSchema = joi.object({
-    deal_id: deal_id.required(),
+  const dealIdSchema = joi.object({ deal_id: deal_id.required() });
+
+  const acceptDealSchema = dealIdSchema.keys();
+
+  const fundTransferSchema = dealIdSchema.keys({
+    txHash: txHash.required(),
   });
 
   return {
@@ -91,9 +134,9 @@ const valSchemas = function () {
     paginationParams,
     searchReqSchema,
     acceptDealSchema,
+    dealIdSchema,
+    fundTransferSchema,
   };
-};
+})();
 
-module.exports = {
-  validationSchemas: valSchemas(),
-};
+module.exports = { validationSchemas };

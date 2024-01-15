@@ -1,6 +1,7 @@
 import { toast } from "react-toastify";
-import { ERROR_CODES, TOAST_RESPONSE } from "./constants.utils";
+import { TOAST_RESPONSE } from "./constants.utils";
 import axiosIntance from "../configs/axios.config";
+
 /**
  * Helper function to show toasts.
  * @param {String} message message to display in the toast.
@@ -15,18 +16,11 @@ export const toastMessage = (message, toastId, response) => {
 };
 
 /**
- * Helper function to check the error thrown.
+ * @description Helper function to check the error thrown.
  * @param {Object} error contains details of the error thrown.
  */
-export const checkError = (error) => {
-  if (error.code === ERROR_CODES.USER_REJECTED_REQUEST) {
-    toastMessage(error.message, "toast_denied_error", TOAST_RESPONSE.ERROR);
-  } else if (error.code === ERROR_CODES.RESOURCE_BUSY) {
-    toastMessage(error.message, "toast_resource_error", TOAST_RESPONSE.ERROR);
-  } else if (error.code === ERROR_CODES.TRANSACTION_REJECTED) {
-    toastMessage(error.message, "toast_resource_error", TOAST_RESPONSE.ERROR);
-  }
-};
+export const checkError = (error) =>
+  toastMessage(error.message, error.code, TOAST_RESPONSE.ERROR);
 
 /**
  * Helper function which takes in the address and manipulates it in such a way that is to be displayed to user.
@@ -34,21 +28,16 @@ export const checkError = (error) => {
  * @param {number} offset
  * @returns the wallet address that is to be displayed
  */
-export const displayWalletAddress = (address, offset) => {
-  return (
-    address?.substring(0, offset) +
-    "..." +
-    address?.substring(address.length - offset)
-  );
-};
+export const displayWalletAddress = (address, offset) =>
+  `${address?.substring(0, offset)}...${address?.slice(-offset)}`;
 
 /**
  * Helper function for API call.
- * @param {string} method
- * @param {string} route
- * @param {Object} values
- * @param {Object} params
- * @returns response from the API call or error incase if any.
+ * @param {string} method - The HTTP method for the API call (e.g., 'get', 'post', 'put', 'delete').
+ * @param {string} route - The API endpoint or route.
+ * @param {object} [values={}] - The data to be sent with the API call (request payload or parameters).
+ * @param {object} [params={}] - Additional configuration parameters for the Axios request.
+ * @returns {Promise<AxiosResponse|Error>} A promise that resolves with the Axios response or rejects with an error.
  */
 export const APIcall = async (method, route, values = {}, params = {}) => {
   try {
@@ -59,9 +48,22 @@ export const APIcall = async (method, route, values = {}, params = {}) => {
 };
 
 /**
- * Helper function that Copies the text to clipboard
- * @param {string} text
+ * @description Helper function that Copies the text to clipboard
+ * @param {string} text - The text to be copied to the clipboard.
  */
-export const copyToClipboard = (text) => {
-  navigator.clipboard.writeText(text);
+export const copyToClipboard = (text) => navigator.clipboard.writeText(text);
+
+export const formatDate = (dateString) => {
+  let date = new Date(dateString);
+  let now_utc = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds()
+  );
+
+  let toString = new Date(now_utc).toUTCString();
+  return toString.split(" ").slice(1).join(" ");
 };

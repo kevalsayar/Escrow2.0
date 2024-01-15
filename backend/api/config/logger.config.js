@@ -1,6 +1,7 @@
 /**
- * Logger configurations
+ * Logger configurations for application logging.
  */
+
 const winston = require("winston"),
   {
     TIME_FORMAT,
@@ -39,6 +40,7 @@ const logger = winston.createLogger({
   ],
 });
 
+// Add a console transport for non-production environments.
 if (process.env.NODE_ENV.trim() !== "production") {
   logger.add(
     new winston.transports.Console({
@@ -47,6 +49,4 @@ if (process.env.NODE_ENV.trim() !== "production") {
   );
 }
 
-module.exports = {
-  logger,
-};
+module.exports = { logger };

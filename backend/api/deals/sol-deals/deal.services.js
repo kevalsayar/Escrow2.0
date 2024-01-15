@@ -1,310 +1,251 @@
-const { DealTable } = require("./deal.queries"),
-  { HelperFunction } = require("../../common/helpers"),
+const { SolQueries } = require("./deal.queries"),
+  { ApiError } = require("../../utils/ApiError"),
+  { ApiResponse } = require("../../utils/ApiResponse"),
   { ConstantMembers } = require("../../common/members"),
-  { SolanaHandlers } = require("../../common/solana"),
-  currentFileName = __filename.slice(__dirname.length + 1);
+  { SolanaHandlers } = require("../../common/solanaUtils");
 
-const DealServices = function () {
+const DealServices = (() => {
   /**
-   * @description user's deal details
-   * @param {Object} dealDetails
-   * @returns
+   * @description Adds details for a new SolDeal.
+   * @param {object} dealDetails - Details of the new SolDeal.
+   * @returns {Promise<ApiResponse>} A promise that resolves to an ApiResponse indicating the success of the operation.
    */
   const addDealDetails = async function (dealDetails) {
-    try {
-      const result = await DealTable.add(dealDetails);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.ENTRY_ADDED,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-created"],
-        { deal_id: result.id, deal_link: result.deal_link }
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
-    }
+    const result = await SolQueries.add(dealDetails);
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.ENTRY_ADDED,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-created"],
+      { deal_id: result.id, deal_link: result.deal_link }
+    );
   };
 
   /**
-   * @description get data of deals
-   * @param {string} dealId
+   * @description Retrieves details of SolDeals based on provided criteria.
+   * @param {object} data - Criteria for retrieving SolDeals.
+   * @returns {Promise<ApiResponse>} A promise that resolves to an ApiResponse containing SolDeal information.
    */
   const getDealDetails = async function (data) {
-    try {
-      let queryResult;
-      let total_pages;
-      if (data.deal_id) {
-        if ((await DealTable.getDealById(data.deal_id)).rows.length) {
-          queryResult = await DealTable.getDealById(data.deal_id);
-        } else {
-          return HelperFunction.createResponse(
-            ConstantMembers.REQUEST_CODE.NOT_FOUND,
-            ConstantMembers.STATUS.FALSE,
-            ConstantMembers.Messages.deal.error["inexistent-resource"]
-          );
-        }
-      } else if (data.wallet_address) {
-        if (
-          await DealTable.getDealsByWalletAddress(
-            data.filter,
-            data.wallet_address
-          )
-        ) {
-          queryResult = await DealTable.getDealsByWalletAddress(
-            data.filter,
-            data.wallet_address,
-            parseInt(data.record_limit * (data.page_num - 1)),
-            parseInt(data.record_limit)
-          );
-          total_pages = Math.ceil(
-            parseInt(queryResult.count) / parseInt(data.record_limit)
-          );
-        } else {
-          return HelperFunction.createResponse(
-            ConstantMembers.REQUEST_CODE.NOT_FOUND,
-            ConstantMembers.STATUS.FALSE,
-            ConstantMembers.Messages.deal.error["inexistent-resource"]
-          );
-        }
-      }
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.SUCCESS,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-info"],
-        data.wallet_address
-          ? {
-              currentPage: parseInt(data.page_num),
-              recordLimit: parseInt(data.record_limit),
-              total_pages: total_pages,
-              total_records: queryResult.count,
-              deal_list: queryResult.rows,
-            }
-          : queryResult.rows
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
-    }
-  };
+    let queryResult;
 
-  /**
-   * @description Service for searching against a given string.
-   * @param {Object} data
-   * @returns {Object}
-   */
-  const searchInfoOfDeal = async function (data) {
-    try {
-      const searchResult = await DealTable.searchInfo(
+    if (data.deal_id) {
+      queryResult = await SolQueries.getDealById(data.deal_id);
+
+      if (!queryResult)
+        throw new ApiError(
+          ConstantMembers.STATUS_CODE.NOT_FOUND,
+          ConstantMembers.SERVER_MESSAGES.request.error["inexistent-resource"]
+        );
+    } else if (data.wallet_address) {
+      queryResult = await SolQueries.getDeals(
         data.filter,
         data.wallet_address,
-        data.searchValue.trim(),
         parseInt(data.record_limit * (data.page_num - 1)),
         parseInt(data.record_limit)
       );
-      if (!searchResult.count)
-        return HelperFunction.createResponse(
-          ConstantMembers.REQUEST_CODE.NOT_FOUND,
-          ConstantMembers.STATUS.FALSE,
-          ConstantMembers.Messages.deal.error["inexistent-resource"]
+
+      if (!queryResult.count)
+        throw new ApiError(
+          ConstantMembers.STATUS_CODE.NOT_FOUND,
+          ConstantMembers.SERVER_MESSAGES.request.error["inexistent-resource"]
         );
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.SUCCESS,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-info"],
-        {
-          currentPage: parseInt(data.page_num),
-          recordLimit: parseInt(data.record_limit),
-          total_pages: searchResult.count,
-          total_records: searchResult.count,
-          search_list: searchResult.rows,
-        }
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
     }
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-info"],
+      data.wallet_address
+        ? {
+            currentPage: parseInt(data.page_num),
+            recordLimit: parseInt(data.record_limit),
+            total_pages: Math.ceil(
+              parseInt(queryResult.count) / parseInt(data.record_limit)
+            ),
+            total_records: queryResult.count,
+            deal_list: queryResult.rows,
+          }
+        : queryResult
+    );
   };
 
   /**
-   * @description Service for checking a deal link's status.
-   * @param {Object} dealInfo
-   * @returns {Object}
+   * @description Searches for SolDeals based on provided criteria.
+   * @param {object} data - Criteria for searching SolDeals.
+   * @returns {Promise<ApiResponse>} A promise that resolves to an ApiResponse containing SolDeal search results.
+   */
+  const searchInfoOfDeal = async function (data) {
+    const searchRes = await SolQueries.getDeals(
+      data.filter,
+      data.wallet_address,
+      parseInt(data.record_limit * (data.page_num - 1)),
+      parseInt(data.record_limit),
+      data.searchValue.trim()
+    );
+
+    if (!searchRes.count)
+      throw new ApiError(
+        ConstantMembers.STATUS_CODE.NOT_FOUND,
+        ConstantMembers.SERVER_MESSAGES.request.error["inexistent-resource"]
+      );
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-info"],
+      {
+        currentPage: parseInt(data.page_num),
+        recordLimit: parseInt(data.record_limit),
+        total_pages: Math.ceil(searchRes.count / parseInt(data.record_limit)),
+        total_records: searchRes.count,
+        search_list: searchRes.rows,
+      }
+    );
+  };
+
+  /**
+   * @description Checks the eligibility of a SolDeal for acceptance.
+   * @param {object} dealInfo - Information about the SolDeal to check for acceptance.
+   * @returns {Promise<ApiResponse>} A promise that resolves to an ApiResponse indicating the eligibility of the SolDeal for acceptance.
    */
   const acceptDealCheck = async function (dealInfo) {
-    try {
-      if ((await DealTable.getDealById(dealInfo.deal_id)).rows.length) {
-        if (await DealTable.checkDealLinkStatus(dealInfo)) {
-          return HelperFunction.createResponse(
-            ConstantMembers.REQUEST_CODE.SUCCESS,
-            ConstantMembers.STATUS.TRUE,
-            ConstantMembers.Messages.deal.success["deal-link-active"]
-          );
-        } else {
-          return HelperFunction.createResponse(
-            ConstantMembers.REQUEST_CODE.BAD_REQUEST,
-            ConstantMembers.STATUS.FALSE,
-            ConstantMembers.Messages.deal.error["deal-link_inactive"]
-          );
-        }
-      } else {
-        return HelperFunction.createResponse(
-          ConstantMembers.REQUEST_CODE.NOT_FOUND,
-          ConstantMembers.STATUS.FALSE,
-          ConstantMembers.Messages.deal.error["inexistent-resource"]
-        );
-      }
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
+    const dealDetails = await SolQueries.getDealById(dealInfo.deal_id);
+
+    if (!dealDetails)
+      throw new ApiError(
+        ConstantMembers.STATUS_CODE.NOT_FOUND,
+        ConstantMembers.SERVER_MESSAGES.request.error["inexistent-resource"]
       );
-    }
+
+    if (!dealDetails.isDealLinkActive)
+      throw new ApiError(
+        ConstantMembers.STATUS_CODE.BAD_REQUEST,
+        ConstantMembers.SERVER_MESSAGES.deal.error["deal-link_inactive"]
+      );
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-link-active"]
+    );
   };
 
+  /**
+   * @description Sets the escrow account details for a SolDeal.
+   * @param {object} dealInfo - Information about the SolDeal.
+   * @returns {Promise<ApiResponse>} A promise that resolves to an ApiResponse indicating the success of the operation.
+   */
   const setEscrowAccountId = async function (dealInfo) {
-    try {
-      const escrowWallet = await SolanaHandlers.getEscrowAddress(
-        dealInfo.deal_id
-      );
-      const commissionRate = await SolanaHandlers.getCommissionRate(
-        dealInfo.deal_id
-      );
-      const minimumEscrowAmount = await SolanaHandlers.getMinEscrowAmount(
-        dealInfo.deal_id
-      );
-      dealInfo.escrowWallet = escrowWallet;
-      dealInfo.commissionRate = commissionRate;
-      dealInfo.minimumEscrowAmount = minimumEscrowAmount;
-      await DealTable.setEscrowWalletAndAccountId(dealInfo);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.SUCCESS,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-updated"]
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
-    }
+    const escrowData = await SolanaHandlers.getAccountData(dealInfo.deal_id);
+
+    await SolQueries.updateDealDetails(
+      {
+        escrow_wallet: await SolanaHandlers.getEscrowAddress(dealInfo.deal_id),
+        commission_rate: escrowData.commissionrate.toString(),
+        min_escrow_amount: escrowData.minimumescrowAmount.toString(),
+        commission_wallet: escrowData.commissionwallet.toString(),
+      },
+      { id: dealInfo.deal_id }
+    );
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-updated"]
+    );
   };
 
+  /**
+   * @description Handles the deposit service for a funded SolDeal.
+   * @param {object} dealInfo - Information about the SolDeal deposit.
+   * @returns {Promise<ApiResponse>} A promise that resolves to an ApiResponse indicating the success of the operation.
+   */
   const depositService = async function (dealInfo) {
-    try {
-      const buyerWallet = await SolanaHandlers.getDepositAddress(
-        dealInfo.deal_id
-      );
-      dealInfo.buyerWallet = buyerWallet;
-      dealInfo.dealStatus = ConstantMembers.DEAL_STATUS.FUNDED;
-      await DealTable.updateStatusToFunded(dealInfo);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.SUCCESS,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-updated"]
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
-    }
+    await SolQueries.updateDealDetails(
+      {
+        buyer_wallet: (
+          await SolanaHandlers.getAccountData(dealInfo.deal_id)
+        ).owner.toString(),
+        deal_status: ConstantMembers.DEAL_STATUS.FUNDED,
+        fund_tx_hash: dealInfo.txHash,
+      },
+      { id: dealInfo.deal_id }
+    );
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-updated"]
+    );
   };
 
+  /**
+   * @description Handles the acceptance of a SolDeal by the seller.
+   * @param {object} dealInfo - Information about the accepted SolDeal.
+   * @returns {Promise<ApiResponse>} A promise that resolves to an ApiResponse indicating the success of the operation.
+   */
   const acceptDealService = async function (dealInfo) {
-    try {
-      const seller = await SolanaHandlers.getSellerAdddress(dealInfo.deal_id);
-      dealInfo.seller = seller;
-      dealInfo.dealStatus = ConstantMembers.DEAL_STATUS.ACCEPTED;
-      await DealTable.updateStatusToAccepted(dealInfo);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.SUCCESS,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-updated"]
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
-    }
+    await SolQueries.updateDealDetails(
+      {
+        seller_wallet: (
+          await SolanaHandlers.getAccountData(dealInfo.deal_id)
+        ).seller.toString(),
+        deal_status: ConstantMembers.DEAL_STATUS.ACCEPTED,
+        isDealLinkActive: false,
+      },
+      { id: dealInfo.deal_id }
+    );
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-updated"]
+    );
   };
 
+  /**
+   * @description Handles the release of funds for a SolDeal.
+   * @param {object} dealInfo - Information about the released funds in the SolDeal.
+   * @returns {Promise<ApiResponse>} A promise that resolves to an ApiResponse indicating the success of the operation.
+   */
   const releaseFundService = async function (dealInfo) {
-    try {
-      const releasedBy = await SolanaHandlers.getReleasedBy(dealInfo.deal_id);
-      const amountReleased = await SolanaHandlers.getReleasedAmount(
-        dealInfo.deal_id
-      );
-      const commissionAmount = await SolanaHandlers.getCommissionAmount(
-        dealInfo.deal_id
-      );
-      dealInfo.dealStatus = ConstantMembers.DEAL_STATUS.RELEASED;
-      dealInfo.releasedBy = releasedBy;
-      dealInfo.amountReleased = amountReleased;
-      dealInfo.commissionAmount = commissionAmount;
-      await DealTable.updateStatusToReleased(dealInfo);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.SUCCESS,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-updated"]
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
-    }
+    const escrowData = await SolanaHandlers.getAccountData(dealInfo.deal_id);
+
+    await SolQueries.updateDealDetails(
+      {
+        released_by: escrowData.realesedBy.toString(),
+        released_amount: escrowData.releasedAmount.toString(),
+        commission_amount: escrowData.commissionAmount.toString(),
+        deal_status: ConstantMembers.DEAL_STATUS.RELEASED,
+        release_tx_hash: dealInfo.txHash,
+      },
+      { id: dealInfo.deal_id }
+    );
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-updated"]
+    );
   };
 
+  /**
+   * @description Handles the withdrawal of funds for a refunded SolDeal.
+   * @param {object} dealInfo - Information about the withdrawn funds in the SolDeal.
+   * @returns {Promise<ApiResponse>} A promise that resolves to an ApiResponse indicating the success of the operation.
+   */
   const withdrawFundService = async function (dealInfo) {
-    try {
-      const buyer = await SolanaHandlers.getDepositAddress(dealInfo.deal_id);
-      const amount_withdrawn = await SolanaHandlers.getReleasedAmount(
-        dealInfo.deal_id
-      );
-      const commission_amount = await SolanaHandlers.getCommissionAmount(
-        dealInfo.deal_id
-      );
-      dealInfo.dealStatus = ConstantMembers.DEAL_STATUS.REFUNDED;
-      dealInfo.buyer = buyer;
-      dealInfo.amount_withdrawn = amount_withdrawn;
-      dealInfo.commissionAmount = commission_amount;
-      await DealTable.updateStatusToRefunded(dealInfo);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.SUCCESS,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-updated"]
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
-    }
+    const escrowData = await SolanaHandlers.getAccountData(dealInfo.deal_id);
+
+    await SolQueries.updateDealDetails(
+      {
+        released_by: escrowData.realesedBy.toString(),
+        released_amount: escrowData.releasedAmount.toString(),
+        commission_amount: escrowData.commissionAmount.toString(),
+        deal_status: ConstantMembers.DEAL_STATUS.REFUNDED,
+        isDealLinkActive: false,
+        release_tx_hash: dealInfo.txHash,
+      },
+      { id: dealInfo.deal_id }
+    );
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-updated"]
+    );
   };
 
   return {
@@ -318,8 +259,6 @@ const DealServices = function () {
     releaseFundService,
     withdrawFundService,
   };
-};
+})();
 
-module.exports = {
-  DealServices: DealServices(),
-};
+module.exports = { DealServices };

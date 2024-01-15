@@ -11,7 +11,7 @@
     },
     "tags": [
         {
-            "name": "BSC Deals",
+            "name": "Sepolia Deals",
             "description": "Deal operations"
         },
         {
@@ -170,10 +170,10 @@
         }
     },
     "paths": {
-        "/deal/bsc": {
+        "/deal/sepolia": {
             "post": {
                 "tags": [
-                    "BSC Deals"
+                    "Sepolia Deals"
                 ],
                 "description": "Create a new deal in Escrow.",
                 "requestBody": {
@@ -224,7 +224,7 @@
             "get": {
                 "description": "Get all or a specific deal's information.",
                 "tags": [
-                    "BSC Deals"
+                    "Sepolia Deals"
                 ],
                 "parameters": [
                     {
@@ -289,10 +289,10 @@
                 }
             }
         },
-        "/deal/bsc/search": {
+        "/deal/sepolia/search": {
             "post": {
                 "tags": [
-                    "BSC Deals"
+                    "Sepolia Deals"
                 ],
                 "description": "search deals on the basis of Title, Description, Fund TxHash/ Release TxHash, Buyer/Seller wallet address",
                 "parameters": [
@@ -360,11 +360,11 @@
                 }
             }
         },
-        "/deal/bsc/accept": {
+        "/deal/sepolia/accept": {
             "get": {
                 "description": "Checks if a particular deal's link is active or inactive.",
                 "tags": [
-                    "BSC Deals"
+                    "Sepolia Deals"
                 ],
                 "parameters": [
                     {

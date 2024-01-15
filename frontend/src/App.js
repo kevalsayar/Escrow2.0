@@ -1,16 +1,16 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import Login from "./views/Login";
-import TransactionsMeta from "./views/Binance/Transactions";
+import TransactionsMeta from "./views/Sepolia/Transactions";
 import TransactionsPhantom from "./views/Solana/Transactions";
 import TransactionsTron from "./views/TronLink/Transactions";
-import Dashboard from "./views/Binance/Dashboard";
+import Dashboard from "./views/Sepolia/Dashboard";
 import DashboardPhantom from "./views/Solana/Dashboard";
 import DashboardTron from "./views/TronLink/Dashboard";
-import NewDeal from "./views/Binance/NewDeal";
+import NewDeal from "./views/Sepolia/NewDeal";
 import NewDealPhantom from "./views/Solana/NewDeal";
 import NewDealTron from "./views/TronLink/NewDeal";
-import AcceptDeal from "./views/Binance/AcceptDeal";
+import AcceptDeal from "./views/Sepolia/AcceptDeal";
 import AcceptDealPhantom from "./views/Solana/AcceptDeal";
 import AcceptDealTron from "./views/TronLink/AcceptDeal";
 import Auth from "./middleware/auth";
@@ -28,42 +28,42 @@ function App() {
   const { user, logout, login } = useAuth();
   const { connect, isConnectedTo } = useConnect();
   const { setSolanaAddr, solanaAddr } = useSolana();
+
   useEffect(() => {
     const handleAccountsChanged = async (accounts) => {
-      if (accounts.length === 0) {
-        logout();
-      } else {
+      if (!accounts.length) logout();
+      else {
         connect(walletTypes.metamask);
         login(accounts[0]);
       }
     };
+
     if (isConnectedTo === walletTypes.metamask) {
       window?.ethereum?.on("accountsChanged", handleAccountsChanged);
       window?.ethereum?.on("disconnect", logout);
     } else if (isConnectedTo === walletTypes.tronlink) {
       window?.addEventListener("message", function (e) {
-        if (e.data.message && e.data.message.action == "disconnect") {
-          logout();
-        }
-        if (e.data.message && e.data.message.action == "setAccount") {
+        if (e.data.message && e.data.message.action == "disconnect") logout();
+
+        if (e.data.message && e.data.message.action == "setAccount")
           login(e.data.message.data.address);
-        }
       });
     } else if (solanaAddr && isConnectedTo === walletTypes.phantom) {
       const provider = getProvider();
+
       provider?.on("disconnect", () => {
         logout();
       });
+
       provider?.on("accountChanged", (publicKey) => {
-        if (publicKey) {
-          setSolanaAddr(publicKey.toBase58());
-        } else {
+        if (publicKey) setSolanaAddr(publicKey.toBase58());
+        else
           provider.connect().catch((error) => {
             console.log(error);
           });
-        }
       });
     }
+
     return () => {
       if (isConnectedTo === walletTypes.metamask) {
         window?.ethereum?.removeListener(
@@ -73,19 +73,19 @@ function App() {
         window?.ethereum?.removeListener("disconnect", logout);
       } else if (solanaAddr && isConnectedTo === walletTypes.phantom) {
         const provider = getProvider();
+
         provider?.removeListener("disconnect", logout);
         provider?.removeListener("accountChanged", (publicKey) => {
-          if (publicKey) {
-            setSolanaAddr(publicKey.toBase58());
-          } else {
+          if (publicKey) setSolanaAddr(publicKey.toBase58());
+          else
             provider.connect().catch((error) => {
               console.log(error);
             });
-          }
         });
       }
     };
   }, [user, logout, isConnectedTo, connect]);
+
   return (
     <div className="App">
       <ToastContainer
@@ -109,8 +109,6 @@ function App() {
               )
             }
           />
-        </Route>
-        <Route element={<Auth />}>
           <Route
             path="/transactions"
             element={
@@ -123,8 +121,6 @@ function App() {
               )
             }
           />
-        </Route>
-        <Route element={<Auth />}>
           <Route
             path="/new-deal"
             exact
@@ -138,8 +134,6 @@ function App() {
               )
             }
           />
-        </Route>
-        <Route element={<Auth />}>
           <Route
             path="/accept"
             element={
@@ -153,9 +147,9 @@ function App() {
             }
           />
         </Route>
-        {/* <Route path="*" element={<Auth />} /> */}
       </Routes>
     </div>
   );
 }
+
 export default App;

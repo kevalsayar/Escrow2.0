@@ -1,248 +1,103 @@
-const { Op } = require("sequelize");
-const { DEAL_LINK_PATH } = require("../../config/env");
-const { SolDeal } = require("./deal.model");
+const { Op } = require("sequelize"),
+  { DEAL_LINK_PATH } = require("../../config/env"),
+  { HelperFunction } = require("../../common/helpers"),
+  { SolDealsModel } = require("./deal.model");
 
-const DealTable = (function () {
+const SolQueries = (() => {
   /**
-   * @description Creates a new deal in the database.
-   * @param {Object} dealDetails deal's information
-   * @returns {Object}
+   * @description Adds a new SolDealsModel to the database.
+   * @param {object} dealDetails - Details of the SolDealsModel to be added.
+   * @returns {Promise<SolDealsModel>} A promise that resolves to the created SolDealsModel instance.
    */
-  const add = async (dealDetails) => {
-    const newuuid =
-      new Date().getTime().toString(36) + Math.random().toString(36).slice(2);
-    const queryResult = await SolDeal.create({
-      id: newuuid,
-      deal_link: `${DEAL_LINK_PATH}${newuuid}`,
-      ...dealDetails,
+  const add = async (dealDetails) =>
+    await HelperFunction.runTransaction(async (transaction) => {
+      const newuuid =
+        new Date().getTime().toString(36) + Math.random().toString(36).slice(2);
+
+      return await SolDealsModel.create(
+        {
+          id: newuuid,
+          deal_link: `${DEAL_LINK_PATH}${newuuid}`,
+          ...dealDetails,
+        },
+        { transaction: transaction }
+      );
     });
-    return queryResult;
-  };
 
   /**
-   * @description fetches a particular against a particular deal id.
-   * @param {String} deal_id
-   * @returns {Object | Boolean}
+   * @description Fetches a particular deal against a particular id.
+   * @param {string} id - The unique identifier of the SolDealsModel to retrieve.
+   * @returns {Promise<SolDealsModel|null>} A promise that resolves to the SolDealsModel with the specified ID, or null if not found.
    */
-  const getDealById = async (deal_id) => {
-    const queryResult = await SolDeal.findAndCountAll({
-      where: { id: deal_id },
-      attributes: {
-        exclude: ["updatedAt", "deleted_at"],
-      },
+  const getDealById = async (id) =>
+    await HelperFunction.runTransaction(
+      async (transaction) =>
+        await SolDealsModel.findOne({
+          where: { id },
+          attributes: {
+            exclude: ["updatedAt", "deleted_at"],
+          },
+          transaction,
+        })
+    );
+
+  /**
+   * @description Retrieves a list of SolDeals based on specified column, value, offset, limit, and an optional search string.
+   * @param {string} col - The column to filter by (e.g., 'buyer_wallet').
+   * @param {string} val - The value to match in the specified column.
+   * @param {number} [offset=0] - The number of records to skip in the result set (pagination).
+   * @param {number} [limit=10] - The maximum number of records to retrieve (pagination).
+   * @param {string} [searchVal=""] - An optional search string to filter deals by ID, title, description, buyer_wallet, or seller_wallet.
+   * @returns {Promise<{ count: number, rows: SolDealsModel[] }>} A promise that resolves to an object containing the count of matching records and an array of SolDealsModel instances.
+   */
+  const getDeals = async (col, val, offset = 0, limit = 10, searchVal = "") => {
+    return await HelperFunction.runTransaction(async (transaction) => {
+      const whereClause = {
+        [col]: val,
+      };
+
+      if (searchVal)
+        whereClause[Op.or] = [
+          { id: { [Op.like]: `%${searchVal}%` } },
+          { deal_title: { [Op.like]: `%${searchVal}%` } },
+          { deal_description: { [Op.like]: `%${searchVal}%` } },
+          { buyer_wallet: { [Op.like]: `%${searchVal}%` } },
+          { seller_wallet: { [Op.like]: `%${searchVal}%` } },
+        ];
+
+      return await SolDealsModel.findAndCountAll({
+        where: whereClause,
+        offset,
+        limit,
+        order: [["updatedAt", "DESC"]],
+        attributes: { exclude: ["updatedAt", "deleted_at"] },
+        transaction,
+      });
     });
-    return queryResult ? queryResult : false;
   };
 
   /**
-   * @description fetches all available deals against a particular wallet address.
-   * @param {String} wallet_address
-   * @param {Number} offset
-   * @param {Number} limit
-   * @returns {Object | Boolean}
+   * @description Asynchronously updates deal details based on a given query object, using a transaction.
+   * @param {Object} detailsToUpdate - The details to be updated.
+   * @param {Object} whereQueryObj - The query object specifying which deals to update.
+   * @returns {Promise<number>} A promise that resolves with the number of updated deals.
    */
-  const getDealsByWalletAddress = async (
-    columnName,
-    val,
-    offset = 0,
-    limit = 10
-  ) => {
-    const queryResult = await SolDeal.findAndCountAll({
-      where: {
-        [columnName]: val,
-      },
-      offset,
-      limit,
-      order: [["updatedAt", "DESC"]],
-      attributes: {
-        exclude: ["updatedAt", "deleted_at"],
-      },
-    });
-    return queryResult.rows.length != 0 ? queryResult : false;
-  };
-
-  /**
-   * @description sets the escrow wallet and commission rate for a particular deal.
-   * @param {Object} dealDetails
-   * @returns {Object}
-   */
-  const setEscrowWalletAndAccountId = async (dealDetails) => {
-    const queryResult = await SolDeal.update(
-      {
-        escrow_wallet: dealDetails.escrowWallet,
-        commission_rate: dealDetails.commissionRate,
-        min_escrow_amount: dealDetails.minimumEscrowAmount,
-      },
-      { where: { id: dealDetails.deal_id } }
+  const updateDealDetails = async (detailsToUpdate, whereQueryObj) =>
+    await HelperFunction.runTransaction(
+      async (transaction) =>
+        await SolDealsModel.update(
+          detailsToUpdate,
+          { where: whereQueryObj },
+          transaction
+        )
     );
-    return queryResult;
-  };
-
-  /**
-   * @description updates deal status to funded.
-   * @param {Object} dealDetails
-   * @returns {Object}
-   */
-  const updateStatusToFunded = async (dealDetails) => {
-    const queryResult = await SolDeal.update(
-      {
-        buyer_wallet: dealDetails.buyerWallet,
-        deal_status: dealDetails.dealStatus,
-      },
-      { where: { id: dealDetails.deal_id } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description updates a particular deal's status to accepted and subsequently sets the seller.
-   * @param {Object} dealDetails
-   * @returns {Object}
-   */
-  const updateStatusToAccepted = async (dealDetails) => {
-    const queryResult = await SolDeal.update(
-      {
-        seller_wallet: dealDetails.seller,
-        deal_status: dealDetails.dealStatus,
-        isDealLinkActive: false,
-      },
-      { where: { id: dealDetails.deal_id } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description updates a particular deal's status to released and subsequently sets the necessary fields.
-   * @param {Object} dealDetails
-   * @returns {Object}
-   */
-  const updateStatusToReleased = async (dealDetails) => {
-    const queryResult = await SolDeal.update(
-      {
-        released_by: dealDetails.releasedBy,
-        released_amount: dealDetails.amountReleased,
-        commission_amount: dealDetails.commissionAmount,
-        deal_status: dealDetails.dealStatus,
-      },
-      { where: { id: dealDetails.deal_id } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description updates a particular deal's status to refunded and subsequently sets the necessary fields.
-   * @param {Object} dealDetails
-   * @returns
-   */
-  const updateStatusToRefunded = async (dealDetails) => {
-    const queryResult = await SolDeal.update(
-      {
-        released_by: dealDetails.buyer,
-        released_amount: dealDetails.amount_withdrawn,
-        commission_amount: dealDetails.commission_amount,
-        deal_status: dealDetails.dealStatus,
-        isDealLinkActive: false,
-      },
-      { where: { id: dealDetails.deal_id } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description updates a particular deal's status to owner withdrew and subsequently sets the necessary fields.
-   * @param {Object} dealDetails
-   * @returns
-   */
-  const updateStatusToOwnerWithdraw = async (dealDetails) => {
-    const queryResult = await SolDeal.update(
-      {
-        released_by: dealDetails._destAddr,
-        released_amount: dealDetails.amount_withdrawn,
-        commission_amount: dealDetails.amount_withdrawn,
-        deal_status: dealDetails.dealStatus,
-        isDealLinkActive: false,
-      },
-      { where: { id: dealDetails.deal_id } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description Searches for the given string amongst particular fields.
-   * @param {String} searchString
-   * @param {Number} offset
-   * @param {Number} limit
-   * @returns {Object}
-   */
-  const searchInfo = async (
-    columnName,
-    val,
-    searchString,
-    offset = 0,
-    limit = 10
-  ) => {
-    const queryResult = await SolDeal.findAndCountAll({
-      raw: true,
-      where: {
-        [columnName]: val,
-        [Op.or]: [
-          {
-            id: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-          {
-            deal_title: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-          {
-            deal_description: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-          {
-            buyer_wallet: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-          {
-            seller_wallet: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-        ],
-      },
-      limit,
-      offset,
-      order: [["updatedAt", "DESC"]],
-      attributes: { exclude: ["updatedAt", "deleted_at"] },
-    });
-    return queryResult;
-  };
-
-  const checkDealLinkStatus = async (dealDetails) => {
-    const queryResult = await SolDeal.findOne({
-      where: { id: dealDetails.deal_id },
-    });
-    return queryResult.getDataValue("isDealLinkActive");
-  };
 
   return {
     add,
     getDealById,
-    getDealsByWalletAddress,
-    setEscrowWalletAndAccountId,
-    updateStatusToFunded,
-    updateStatusToAccepted,
-    updateStatusToReleased,
-    updateStatusToRefunded,
-    updateStatusToOwnerWithdraw,
-    searchInfo,
-    checkDealLinkStatus,
+    getDeals,
+    updateDealDetails,
   };
 })();
 
-module.exports = {
-  DealTable,
-};
+module.exports = { SolQueries };

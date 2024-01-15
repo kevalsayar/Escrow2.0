@@ -1,7 +1,7 @@
-const { Connection } = require("@solana/web3.js");
-const { RPCENDPOINT } = require("../env");
+const { Connection } = require("@solana/web3.js"),
+  { SOL_DEVNET_JSONRPC } = require("../env");
 
-const connection = new Connection(RPCENDPOINT, "confirmed", {
+const connection = new Connection(SOL_DEVNET_JSONRPC, "confirmed", {
   skipPreflight: true,
 });
 
@@ -9,9 +9,9 @@ const provider = {
   connection: connection,
   send: async (data, cb) => {
     const response = await connection.sendEncoded(data);
-    if (response.error) {
-      return cb(response.error);
-    }
+
+    if (response.error) return cb(response.error);
+
     return cb(null, response.result);
   },
 };

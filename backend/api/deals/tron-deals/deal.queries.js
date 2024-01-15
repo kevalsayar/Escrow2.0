@@ -1,259 +1,157 @@
-const { Op, col } = require("sequelize");
-const { v4 } = require("uuid");
-const { DEAL_LINK_PATH } = require("../../config/env");
-const { TronDeal } = require("./deal.model");
+const { Op } = require("sequelize"),
+  { v4 } = require("uuid"),
+  { DEAL_LINK_PATH } = require("../../config/env"),
+  { TronDealsModel } = require("./deal.model"),
+  { HelperFunction } = require("../../common/helpers");
 
-const DealTable = (function () {
+const TronQueries = (() => {
   /**
-   * @description Creates a new deal in the database.
-   * @param {Object} dealDetails deal's information
-   * @returns {Object}
+   * @description Add a new deal to the database using a transaction.
+   * @param {Object} dealDetails - The details of the deal to be added.
+   * @returns {Promise<Object>} A Promise that resolves to the newly created deal.
+   * @throws {Error} If there's an issue creating the deal.
    */
-  const add = async (dealDetails) => {
-    const newuuid = v4();
-    const queryResult = await TronDeal.create({
-      id: newuuid,
-      deal_link: `${DEAL_LINK_PATH}${newuuid}`,
-      ...dealDetails,
+  const add = async (dealDetails) =>
+    await HelperFunction.runTransaction(async (transaction) => {
+      const newuuid = v4();
+      return await TronDealsModel.create(
+        {
+          id: newuuid,
+          deal_link: `${DEAL_LINK_PATH}${newuuid}`,
+          ...dealDetails,
+        },
+        { transaction: transaction }
+      );
     });
-    return queryResult;
-  };
 
   /**
-   * @description fetches a particular against a particular deal id.
-   * @param {String} deal_id
-   * @returns {Object | Boolean}
+   * @description  Retrieve a deal by its unique identifier.
+   * @param {string} id - The unique identifier of the deal to retrieve.
+   * @returns {Promise<Object | null>} A Promise that resolves to the retrieved deal object, or null if not found.
+   * @throws {Error} If there's an issue retrieving the deal.
    */
-  const getDealById = async (deal_id) => {
-    const queryResult = await TronDeal.findAndCountAll({
-      where: { id: deal_id },
-      attributes: {
-        exclude: ["commission_wallet", "updatedAt", "deleted_at"],
-      },
-    });
-    return queryResult ? queryResult : false;
-  };
-
-  /**
-   * @description fetches all available deals against a particular wallet address.
-   * @param {String} wallet_address
-   * @param {Number} offset
-   * @param {Number} limit
-   * @returns {Object | Boolean}
-   */
-  const getDealsByWalletAddress = async (
-    columnName,
-    val,
-    offset = 0,
-    limit = 10
-  ) => {
-    const queryResult = await TronDeal.findAndCountAll({
-      where: {
-        [columnName]: val,
-      },
-      offset,
-      limit,
-      order: [["updatedAt", "DESC"]],
-      attributes: {
-        exclude: ["commission_wallet", "updatedAt", "deleted_at"],
-      },
-    });
-    return queryResult.rows.length != 0 ? queryResult : false;
-  };
-
-  /**
-   * @description sets the escrow wallet and commission rate for a particular deal.
-   * @param {Object} dealDetails
-   * @returns {Object}
-   */
-  const setEscrowWallet = async (dealDetails) => {
-    const queryResult = await TronDeal.update(
-      {
-        escrow_wallet: dealDetails.escrowWallet,
-        commission_rate: dealDetails.commissionRate,
-        min_escrow_amount: dealDetails.minimumEscrowAmount,
-        commission_wallet: dealDetails.commissionWallet,
-      },
-      { where: { id: dealDetails.id } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description updates deal status to funded.
-   * @param {Object} dealDetails
-   * @returns {Object}
-   */
-  const updateStatusToFunded = async (dealDetails) => {
-    const queryResult = await TronDeal.update(
-      {
-        buyer_wallet: dealDetails.buyerWallet,
-        deal_status: dealDetails.dealStatus,
-        escrow_amount: dealDetails.totalEscrowAmount,
-        fund_tx_hash: dealDetails.txHash,
-      },
-      { where: { id: dealDetails.id } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description updates a particular deal's status to accepted and subsequently sets the seller.
-   * @param {Object} dealDetails
-   * @returns {Object}
-   */
-  const updateStatusToAccepted = async (dealDetails) => {
-    const queryResult = await TronDeal.update(
-      {
-        seller_wallet: dealDetails.seller,
-        deal_status: dealDetails.dealStatus,
-        isDealLinkActive: false,
-      },
-      { where: { escrow_wallet: dealDetails.escrowWallet } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description updates a particular deal's status to released and subsequently sets the necessary fields.
-   * @param {Object} dealDetails
-   * @returns {Object}
-   */
-  const updateStatusToReleased = async (dealDetails) => {
-    const queryResult = await TronDeal.update(
-      {
-        released_by: dealDetails.releasedBy,
-        released_amount: dealDetails.amountReleased,
-        commission_amount: dealDetails.commissionAmount,
-        deal_status: dealDetails.dealStatus,
-        release_tx_hash: dealDetails.txHash,
-      },
-      { where: { escrow_wallet: dealDetails.escrowWallet } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description updates a particular deal's status to refunded and subsequently sets the necessary fields.
-   * @param {Object} dealDetails
-   * @returns
-   */
-  const updateStatusToRefunded = async (dealDetails) => {
-    const queryResult = await TronDeal.update(
-      {
-        released_by: dealDetails.buyer,
-        released_amount: dealDetails.amount_withdrawn,
-        commission_amount: dealDetails.commission_amount,
-        deal_status: dealDetails.dealStatus,
-        release_tx_hash: dealDetails.txHash,
-        isDealLinkActive: false,
-      },
-      { where: { escrow_wallet: dealDetails.escrowWallet } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description updates a particular deal's status to owner withdrew and subsequently sets the necessary fields.
-   * @param {Object} dealDetails
-   * @returns
-   */
-  const updateStatusToOwnerWithdraw = async (dealDetails) => {
-    const queryResult = await TronDeal.update(
-      {
-        released_by: dealDetails._destAddr,
-        released_amount: dealDetails.amount_withdrawn,
-        commission_amount: dealDetails.amount_withdrawn,
-        deal_status: dealDetails.dealStatus,
-        release_tx_hash: dealDetails.txHash,
-        isDealLinkActive: false,
-      },
-      { where: { escrow_wallet: dealDetails.escrowWallet } }
-    );
-    return queryResult;
-  };
-
-  /**
-   * @description Searches for the given string amongst particular fields.
-   * @param {String} searchString
-   * @param {Number} offset
-   * @param {Number} limit
-   * @returns {Object}
-   */
-  const searchInfo = async (
-    columnName,
-    val,
-    searchString,
-    offset = 0,
-    limit = 10
-  ) => {
-    const queryResult = await TronDeal.findAndCountAll({
-      raw: true,
-      where: {
-        [columnName]: val,
-        [Op.or]: [
-          {
-            deal_title: {
-              [Op.like]: `%${searchString}%`,
-            },
+  const getDealById = async (id) =>
+    await HelperFunction.runTransaction(
+      async (transaction) =>
+        await TronDealsModel.findOne({
+          where: { id },
+          attributes: {
+            exclude: ["commission_wallet", "updatedAt", "deleted_at"],
           },
-          {
-            deal_description: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-          {
-            buyer_wallet: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-          {
-            seller_wallet: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-          {
-            fund_tx_hash: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-          {
-            release_tx_hash: {
-              [Op.like]: `%${searchString}%`,
-            },
-          },
-        ],
-      },
-      limit,
-      offset,
-      order: [["updatedAt", "DESC"]],
-      attributes: { exclude: ["updatedAt", "deleted_at"] },
-    });
-    return queryResult;
-  };
+          transaction,
+        })
+    );
 
-  const checkDealLinkStatus = async (dealDetails) => {
-    const queryResult = await TronDeal.findOne({
-      where: { id: dealDetails.deal_id },
-    });
-    return queryResult.getDataValue("isDealLinkActive");
-  };
+  /**
+   * @description Retrieve a list of deals by a specific column value, optionally paginated.
+   * @param {string} col - The name of the column to search by.
+   * @param {string} val - The value to search for in the specified column.
+   * @param {number} [offset=0] - The number of records to skip before starting to return records (pagination).
+   * @param {number} [limit=10] - The maximum number of records to return (pagination).
+   * @returns {Promise<{ rows: Object[], count: number }>} A Promise that resolves to an object containing an array of retrieved deals (rows) and the total count of matching deals (count).
+   * @throws {Error} If there's an issue retrieving the deals.
+   */
+  const getDealsByWalletAddress = async (col, val, offset = 0, limit = 10) =>
+    await HelperFunction.runTransaction(
+      async (transaction) =>
+        await TronDealsModel.findAndCountAll({
+          where: {
+            [col]: val,
+          },
+          offset,
+          limit,
+          order: [["updatedAt", "DESC"]],
+          attributes: {
+            exclude: ["commission_wallet", "updatedAt", "deleted_at"],
+          },
+          transaction,
+        })
+    );
+
+  /**
+   * @description Asynchronously updates deal details based on a given query object, using a transaction.
+   * @param {Object} detailsToUpdate - The details to be updated.
+   * @param {Object} whereQueryObj - The query object specifying which deals to update.
+   * @returns {Promise<number>} A promise that resolves with the number of updated deals.
+   * @throws {Error} If there is an error during the transaction or update operation.
+   */
+  const updateDealDetails = async (detailsToUpdate, whereQueryObj) =>
+    await HelperFunction.runTransaction(
+      async (transaction) =>
+        await TronDealsModel.update(
+          detailsToUpdate,
+          { where: whereQueryObj },
+          transaction
+        )
+    );
+
+  /**
+   * @description Search for deals based on specified criteria and search string, optionally paginated.x
+   * @param {string} col - The name of the column to filter by.
+   * @param {string} val - The value to filter for in the specified column.
+   * @param {string} searchString - The search string to match against deal information.
+   * @param {number} [offset=0] - The number of records to skip before starting to return records (pagination).
+   * @param {number} [limit=10] - The maximum number of records to return (pagination).
+   * @returns {Promise<{ rows: Object[], count: number }>} A Promise that resolves to an object containing an array of retrieved deals (rows) and the total count of matching deals (count).
+   * @throws {Error} If there's an issue searching for deals.
+   */
+  const searchInfo = async (col, val, searchString, offset = 0, limit = 10) =>
+    await HelperFunction.runTransaction(
+      async (transaction) =>
+        await TronDealsModel.findAndCountAll({
+          raw: true,
+          where: {
+            [col]: val,
+            [Op.or]: [
+              {
+                deal_title: {
+                  [Op.like]: `%${searchString}%`,
+                },
+              },
+              {
+                deal_description: {
+                  [Op.like]: `%${searchString}%`,
+                },
+              },
+              {
+                buyer_wallet: {
+                  [Op.like]: `%${searchString}%`,
+                },
+              },
+              {
+                seller_wallet: {
+                  [Op.like]: `%${searchString}%`,
+                },
+              },
+              {
+                fund_tx_hash: {
+                  [Op.like]: `%${searchString}%`,
+                },
+              },
+              {
+                release_tx_hash: {
+                  [Op.like]: `%${searchString}%`,
+                },
+              },
+            ],
+          },
+          limit,
+          offset,
+          order: [["updatedAt", "DESC"]],
+          attributes: { exclude: ["updatedAt", "deleted_at"] },
+          transaction,
+        })
+    );
 
   return {
     add,
     getDealById,
     getDealsByWalletAddress,
-    setEscrowWallet,
-    updateStatusToFunded,
-    updateStatusToAccepted,
-    updateStatusToReleased,
-    updateStatusToRefunded,
-    updateStatusToOwnerWithdraw,
     searchInfo,
-    checkDealLinkStatus,
+    updateDealDetails,
   };
 })();
 
 module.exports = {
-  DealTable,
+  TronQueries,
 };

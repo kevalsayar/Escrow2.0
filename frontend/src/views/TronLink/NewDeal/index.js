@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import SideBar from "../../../components/Sidebar";
-import Header from "../../../components/TronLink/Header";
+import Header from "../../../components/Header";
+import { useAuth } from "../../../context/authContext";
+import tronLinkIcon from "../../../assets/icons/tronLinkIcon.png";
 import styles from "./newDeal.module.css";
 import DealSuccess from "../../../components/DealSuccess";
 import { Form, Button, Spinner } from "react-bootstrap";
@@ -18,8 +20,8 @@ import {
   SUN,
   API_METHODS,
 } from "../../../utils/constants.utils";
-import escrowFactoryAbi from "../../../abi/tron/escrowFactoryAbi.json";
-import tronUSDTAbi from "../../../abi/tron/usdtTokenAbi.json";
+import escrowFactoryAbi from "../../../contractAbi/tron/escrowFactoryAbi.json";
+import tronUSDTAbi from "../../../contractAbi/tron/usdtTokenAbi.json";
 import { toastMessage, APIcall } from "../../../utils/helper.utils";
 import {
   callSmartContract,
@@ -33,6 +35,7 @@ const NewDeal = () => {
   const [dealLink, setDealLink] = useState("");
   const [error, setError] = useState("");
   const [disableBtn, setDisableBtn] = useState(false);
+  const { user } = useAuth();
 
   const formik = useFormik({
     initialValues: {
@@ -150,7 +153,7 @@ const NewDeal = () => {
   return (
     <React.Fragment>
       <SideBar activeProp="New Deal" />
-      <Header />
+      <Header account={user} walletIcon={tronLinkIcon} />
       <div className={styles.newDeal}>
         {isSubmitted ? (
           <DealSuccess dealLink={dealLink} />

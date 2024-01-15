@@ -1,5 +1,10 @@
-const ConstantMembers = function () {
-  const Messages = {
+/**
+ * A module containing constant values and messages for various parts of the application.
+ *
+ * @returns {Object} An object containing constant values and messages.
+ */
+const ConstantMembers = (() => {
+  const SERVER_MESSAGES = {
     request: {
       validationError: {
         "required-req-body":
@@ -8,6 +13,14 @@ const ConstantMembers = function () {
           "A required query parameter was not included in the request!",
         "required-path-params":
           "A required path parameter was not included in the request!",
+      },
+      error: {
+        internal:
+          "Server encountered an unexpected condition that prevented it from fulfilling the request!",
+        "inexistent-resource": "Can not map the specified URl to a resource!",
+        "existent-resource": "Duplicate resource are not permitted!",
+        unauthorized: "Access denied for requested admin route!",
+        blocked: "User blocked, contact administrator for further information!",
       },
     },
     deal: {
@@ -21,17 +34,14 @@ const ConstantMembers = function () {
         "deal-link-active": "Deal Link's Active.",
       },
       error: {
-        internal:
-          "Server encountered an unexpected condition that prevented it from fulfilling the request!",
         "amount-less-than-minimum":
           "Escrow amount should be greater or equal to the minimum amount!",
         "deal-link_inactive": "Deal Link's Inactive!",
-        "inexistent-resource": "Can not map the specified URl to a resource!",
       },
     },
   };
 
-  const REQUEST_CODE = {
+  const STATUS_CODE = {
     SUCCESS: 200,
     ENTRY_ADDED: 201,
     BAD_REQUEST: 400,
@@ -48,13 +58,13 @@ const ConstantMembers = function () {
     WITHDRAWN_BY_OWNER: "WITHDRAWN_BY_OWNER",
   });
 
-  const STATUS = {
+  const API_STATUS = {
     TRUE: true,
     FALSE: false,
   };
 
   const CONTRACT_EVENTS = {
-    BSC: {
+    SEPOLIA: {
       NEW_PROXY_ADDRESS: "NewProxyAddress",
       FUNDED: "Funded",
       ACCEPTED: "Accepted",
@@ -80,9 +90,7 @@ const ConstantMembers = function () {
     DELETE: "/delete",
     SEARCH: "/search",
     ACCEPT_DEAL: "/accept",
-    BSC: {
-      BSC_DEALS: "/bsc",
-    },
+    SEPOLIA: { SEPOLIA_DEALS: "/sepolia" },
     TRON: { TRON_DEALS: "/tron" },
     SOLANA: {
       SOL_DEALS: "/sol",
@@ -103,17 +111,21 @@ const ConstantMembers = function () {
     DEAL_FUND_WITHDRAWN: "deal-fund-withdrawn",
   });
 
+  const ETHERS_WEI_CONSTANTS = {
+    FROM_WEI: "formatUnits",
+    TO_WEI: "parseUnits",
+  };
+
   return {
-    Messages,
-    REQUEST_CODE,
-    STATUS,
+    SERVER_MESSAGES,
+    STATUS_CODE,
+    API_STATUS,
     ENDPOINTS,
     HTML_TEMPLATES,
     DEAL_STATUS,
     CONTRACT_EVENTS,
+    ETHERS_WEI_CONSTANTS,
   };
-};
+})();
 
-module.exports = {
-  ConstantMembers: ConstantMembers(),
-};
+module.exports = { ConstantMembers };

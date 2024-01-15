@@ -1,178 +1,136 @@
-const { DealTable } = require("./deal.queries"),
-  { HelperFunction } = require("../../common/helpers"),
-  { ConstantMembers } = require("../../common/members"),
-  currentFileName = __filename.slice(__dirname.length + 1);
+const { ApiError } = require("../../utils/ApiError"),
+  { ApiResponse } = require("../../utils/ApiResponse"),
+  { TronQueries } = require("./deal.queries"),
+  { ConstantMembers } = require("../../common/members");
 require("./deal.listeners");
 
-const DealServices = function () {
+const DealServices = () => {
   /**
-   * @description user's deal details
-   * @param {Object} dealDetails
-   * @returns
+   * @description Add deal details to the TronQueries and return an API response.
+   * @param {Object} dealDetails - The details of the deal to be added.
+   * @returns {Promise<ApiResponse>} A Promise that resolves to an ApiResponse object indicating the status of the operation.
+   * @throws {Error} If there's an issue adding the deal details.
    */
-  const addDealDetails = async function (dealDetails) {
-    try {
-      const result = await DealTable.add(dealDetails);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.ENTRY_ADDED,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-created"],
-        { deal_id: result.id, deal_link: result.deal_link }
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
-    }
+  const addDealDetails = async (dealDetails) => {
+    const result = await TronQueries.add(dealDetails);
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.ENTRY_ADDED,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-created"],
+      { deal_id: result.id, deal_link: result.deal_link }
+    );
   };
 
   /**
-   * @description get data of deals
-   * @param {string} dealId
+   * @description Get deal details based on provided criteria, such as deal ID or wallet address.
+   * @param {Object} data - The criteria and parameters for fetching deal details.
+   * @returns {Promise<ApiResponse>} A Promise that resolves to an ApiResponse object containing the retrieved deal details or a list of deals.
+   * @throws {ApiError} If the requested deal or resource is not found.
    */
-  const getDealDetails = async function (data) {
-    try {
-      let queryResult;
-      let total_pages;
-      if (data.deal_id) {
-        if ((await DealTable.getDealById(data.deal_id)).rows.length) {
-          queryResult = await DealTable.getDealById(data.deal_id);
-        } else {
-          return HelperFunction.createResponse(
-            ConstantMembers.REQUEST_CODE.NOT_FOUND,
-            ConstantMembers.STATUS.FALSE,
-            ConstantMembers.Messages.deal.error["inexistent-resource"]
-          );
-        }
-      } else if (data.wallet_address) {
-        if (
-          await DealTable.getDealsByWalletAddress(
-            data.filter,
-            data.wallet_address
-          )
-        ) {
-          queryResult = await DealTable.getDealsByWalletAddress(
-            data.filter,
-            data.wallet_address,
-            parseInt(data.record_limit * (data.page_num - 1)),
-            parseInt(data.record_limit)
-          );
-          total_pages = Math.ceil(
-            parseInt(queryResult.count) / parseInt(data.record_limit)
-          );
-        } else {
-          return HelperFunction.createResponse(
-            ConstantMembers.REQUEST_CODE.NOT_FOUND,
-            ConstantMembers.STATUS.FALSE,
-            ConstantMembers.Messages.deal.error["inexistent-resource"]
-          );
-        }
-      }
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.SUCCESS,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-info"],
-        data.wallet_address
-          ? {
-              currentPage: parseInt(data.page_num),
-              recordLimit: parseInt(data.record_limit),
-              total_pages: total_pages,
-              total_records: queryResult.count,
-              deal_list: queryResult.rows,
-            }
-          : queryResult.rows
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
-    }
-  };
+  const getDealDetails = async (data) => {
+    let queryResult;
 
-  /**
-   * @description Service for searching against a given string.
-   * @param {Object} data
-   * @returns {Object}
-   */
-  const searchInfoOfDeal = async function (data) {
-    try {
-      const searchResult = await DealTable.searchInfo(
+    let total_pages;
+
+    if (data.deal_id) {
+      queryResult = await TronQueries.getDealById(data.deal_id);
+
+      if (!queryResult)
+        throw new ApiError(
+          ConstantMembers.STATUS_CODE.NOT_FOUND,
+          ConstantMembers.SERVER_MESSAGES.request.error["inexistent-resource"]
+        );
+    }
+
+    if (data.wallet_address) {
+      queryResult = await TronQueries.getDealsByWalletAddress(
         data.filter,
         data.wallet_address,
-        data.searchValue.trim(),
         parseInt(data.record_limit * (data.page_num - 1)),
         parseInt(data.record_limit)
       );
-      if (!searchResult.count)
-        return HelperFunction.createResponse(
-          ConstantMembers.REQUEST_CODE.NOT_FOUND,
-          ConstantMembers.STATUS.FALSE,
-          ConstantMembers.Messages.deal.error["inexistent-resource"]
+
+      if (!queryResult.rows.length)
+        throw new ApiError(
+          ConstantMembers.STATUS_CODE.NOT_FOUND,
+          ConstantMembers.SERVER_MESSAGES.request.error["inexistent-resource"]
         );
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.SUCCESS,
-        ConstantMembers.STATUS.TRUE,
-        ConstantMembers.Messages.deal.success["deal-info"],
-        {
-          currentPage: parseInt(data.page_num),
-          recordLimit: parseInt(data.record_limit),
-          total_pages: searchResult.count,
-          total_records: searchResult.count,
-          search_list: searchResult.rows,
-        }
-      );
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
-      );
     }
+
+    return ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-info"],
+      data.wallet_address
+        ? {
+            currentPage: parseInt(data.page_num),
+            recordLimit: parseInt(data.record_limit),
+            total_pages: total_pages,
+            total_records: queryResult.count,
+            deal_list: queryResult.rows,
+          }
+        : queryResult
+    );
   };
 
   /**
-   * @description Service for checking a deal link's status.
-   * @param {Object} dealInfo
-   * @returns {Object}
+   * @description Search for deal information based on specified criteria and search string, optionally paginated.
+   * @param {Object} data - The criteria and parameters for searching deal information.
+   * @returns {Promise<ApiResponse>} A Promise that resolves to an ApiResponse object containing the retrieved search results.
+   * @throws {ApiError} If no matching resources are found.
    */
-  const acceptDealCheck = async function (dealInfo) {
-    try {
-      if ((await DealTable.getDealById(dealInfo.deal_id)).rows.length) {
-        if (await DealTable.checkDealLinkStatus(dealInfo)) {
-          return HelperFunction.createResponse(
-            ConstantMembers.REQUEST_CODE.SUCCESS,
-            ConstantMembers.STATUS.TRUE,
-            ConstantMembers.Messages.deal.success["deal-link-active"]
-          );
-        } else {
-          return HelperFunction.createResponse(
-            ConstantMembers.REQUEST_CODE.BAD_REQUEST,
-            ConstantMembers.STATUS.FALSE,
-            ConstantMembers.Messages.deal.error["deal-link_inactive"]
-          );
-        }
-      } else {
-        return HelperFunction.createResponse(
-          ConstantMembers.REQUEST_CODE.NOT_FOUND,
-          ConstantMembers.STATUS.FALSE,
-          ConstantMembers.Messages.deal.error["inexistent-resource"]
-        );
-      }
-    } catch (error) {
-      HelperFunction.loggerError(error, currentFileName);
-      return HelperFunction.createResponse(
-        ConstantMembers.REQUEST_CODE.INTERNAL_SERVER_ERROR,
-        ConstantMembers.STATUS.FALSE,
-        ConstantMembers.Messages.deal.error.internal
+  const searchInfoOfDeal = async (data) => {
+    const searchResult = await TronQueries.searchInfo(
+      data.filter,
+      data.wallet_address,
+      data.searchValue.trim(),
+      parseInt(data.record_limit * (data.page_num - 1)),
+      parseInt(data.record_limit)
+    );
+
+    if (!searchResult.count)
+      throw new ApiError(
+        ConstantMembers.STATUS_CODE.NOT_FOUND,
+        ConstantMembers.SERVER_MESSAGES.request.error["inexistent-resource"]
       );
-    }
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-info"],
+      {
+        currentPage: parseInt(data.page_num),
+        recordLimit: parseInt(data.record_limit),
+        total_pages: searchResult.count,
+        total_records: searchResult.count,
+        search_list: searchResult.rows,
+      }
+    );
+  };
+
+  /**
+   * @description Check if a deal is valid for acceptance based on deal information.
+   * @param {Object} dealInfo - The deal information to check for acceptance.
+   * @returns {Promise<ApiResponse>} A Promise that resolves to an ApiResponse indicating whether the deal is valid for acceptance.
+   * @throws {ApiError} If the deal is not found, or the deal link is inactive.
+   */
+  const acceptDealCheck = async (dealInfo) => {
+    const dealDetails = await TronQueries.getDealById(dealInfo.deal_id);
+
+    if (!dealDetails)
+      throw new ApiError(
+        ConstantMembers.STATUS_CODE.NOT_FOUND,
+        ConstantMembers.SERVER_MESSAGES.request.error["inexistent-resource"]
+      );
+
+    if (!dealDetails.isDealLinkActive)
+      throw new ApiError(
+        ConstantMembers.STATUS_CODE.BAD_REQUEST,
+        ConstantMembers.SERVER_MESSAGES.deal.error["deal-link_inactive"]
+      );
+
+    return new ApiResponse(
+      ConstantMembers.STATUS_CODE.SUCCESS,
+      ConstantMembers.SERVER_MESSAGES.deal.success["deal-link-active"]
+    );
   };
 
   return {

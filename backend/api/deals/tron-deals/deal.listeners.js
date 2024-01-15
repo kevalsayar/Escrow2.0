@@ -1,17 +1,18 @@
-const { HelperFunction } = require("../../common/helpers"),
+const { BlockchainUtils } = require("../../common/blockchainUtils"),
   { contractInstance } = require("../../config/blockchain/tron.config"),
   EscrowFactoryAbi = require("../../../contracts/tron/abi/factory.json"),
   { ConstantMembers } = require("../../common/members"),
-  { DealTable } = require("./deal.queries"),
+  { TronQueries } = require("./deal.queries"),
   { TRON_CONTRACT_ADDRESS } = require("../../config/env"),
   { tronWebObject } = require("../../common/utils"),
   { logger } = require("../../config/logger.config");
 
-(async function () {
+(async () => {
   const tronContract = await contractInstance(
     TRON_CONTRACT_ADDRESS,
     EscrowFactoryAbi
   );
+
   tronContract[ConstantMembers.CONTRACT_EVENTS.TRON.NEW_PROXY_ADDRESS]().watch(
     async (err, event) => {
       if (err)
@@ -19,21 +20,24 @@ const { HelperFunction } = require("../../common/helpers"),
           `Error with "${ConstantMembers.CONTRACT_EVENTS.TRON.NEW_PROXY_ADDRESS}" event:`,
           err
         );
-      if ((await DealTable.getDealById(event.result.dealId)).rows.length) {
-        await DealTable.setEscrowWallet({
-          id: event.result.dealId,
-          commissionRate: event.result.commissionRate.toString(),
-          escrowWallet: HelperFunction.fromHex(
-            event.result.NewProxyAddress,
-            tronWebObject
-          ),
-          minimumEscrowAmount: event.result.minimumEscrowAmount,
-          commissionWallet: HelperFunction.fromHex(
-            event.result.commissionWallet,
-            tronWebObject
-          ),
-        });
-        // const tronAddress = HelperFunction.fromHex(
+
+      if (await TronQueries.getDealById(event.result.dealId)) {
+        await TronQueries.updateDealDetails(
+          {
+            escrow_wallet: BlockchainUtils.fromHex(
+              event.result.NewProxyAddress,
+              tronWebObject
+            ),
+            commission_rate: event.result.commissionRate.toString(),
+            min_escrow_amount: event.result.minimumEscrowAmount,
+            commission_wallet: BlockchainUtils.fromHex(
+              event.result.commissionWallet,
+              tronWebObject
+            ),
+          },
+          { id: event.result.dealId }
+        );
+        // const tronAddress = BlockchainUtils.fromHex(
         //   event.result.NewProxyAddress,
         //   tronWebObject
         // );
@@ -43,7 +47,7 @@ const { HelperFunction } = require("../../common/helpers"),
         // escrowContract.Funded().watch(async (err, event) => {
         //   if (err) return logger.error('Error with "Funded" event:', err);
         //   try {
-        //     await DealTable.updateStatusToFunded({
+        //     await TronQueries.updateStatusToFunded({
         //       buyerWallet: event.result.buyer,
         //       dealStatus: ConstantMembers.DEAL_STATUS.FUNDED,
         //       escrowWallet: event.result.escrowWallet,
@@ -58,7 +62,7 @@ const { HelperFunction } = require("../../common/helpers"),
         // escrowContract.Accepted().watch(async (err, event) => {
         //   if (err) return logger.error('Error with "Accepted" event:', err);
         //   try {
-        //     await DealTable.updateStatusToAccepted({
+        //     await TronQueries.updateStatusToAccepted({
         //       dealStatus: ConstantMembers.DEAL_STATUS.ACCEPTED,
         //       escrowWallet: event.result.escrowWallet,
         //       seller: event.result.seller,
@@ -71,7 +75,7 @@ const { HelperFunction } = require("../../common/helpers"),
         // escrowContract.ReleaseFund().watch(async (err, event) => {
         //   if (err) return logger.error('Error with "ReleaseFund" event:', err);
         //   try {
-        //     await DealTable.updateStatusToReleased({
+        //     await TronQueries.updateStatusToReleased({
         //       dealStatus: ConstantMembers.DEAL_STATUS.RELEASED,
         //       escrowWallet: event.result.escrowWallet,
         //       releasedBy: event.result.released_by,
@@ -87,7 +91,7 @@ const { HelperFunction } = require("../../common/helpers"),
         // escrowContract.Withdraw().watch(async (err, event) => {
         //   if (err) return logger.error('Error with "Withdraw" event:', err);
         //   try {
-        //     await DealTable.updateStatusToRefunded({
+        //     await TronQueries.updateStatusToRefunded({
         //       dealStatus: ConstantMembers.DEAL_STATUS.REFUNDED,
         //       escrowWallet: event.result.escrowWallet,
         //       buyer: event.result.buyer,
@@ -103,7 +107,7 @@ const { HelperFunction } = require("../../common/helpers"),
         // escrowContract.SixMonths().watch(async (err, event) => {
         //   if (err) return logger.error('Error with "SixMonths" event:', err);
         //   try {
-        // await DealTable.updateStatusToOwnerWithdraw({
+        // await TronQueries.updateStatusToOwnerWithdraw({
         //   dealStatus: ConstantMembers.DEAL_STATUS.WITHDRAWN_BY_OWNER,
         //   escrowWallet: event.escrowWallet,
         //   _destAddr: event._destAddr,
@@ -117,6 +121,7 @@ const { HelperFunction } = require("../../common/helpers"),
       }
     }
   );
+
   tronContract[ConstantMembers.CONTRACT_EVENTS.TRON.FUNDED]().watch(
     async (err, event) => {
       if (err)
@@ -124,22 +129,22 @@ const { HelperFunction } = require("../../common/helpers"),
           `Error with "${ConstantMembers.CONTRACT_EVENTS.TRON.FUNDED}" event:`,
           err
         );
-      try {
-        await DealTable.updateStatusToFunded({
-          id: event.result.dealId,
-          buyerWallet: HelperFunction.fromHex(
+
+      await TronQueries.updateDealDetails(
+        {
+          buyer_wallet: BlockchainUtils.fromHex(
             event.result.buyer,
             tronWebObject
           ),
-          dealStatus: ConstantMembers.DEAL_STATUS.FUNDED,
-          totalEscrowAmount: event.result.totalEscrowAmount.toString(),
-          txHash: event.transaction,
-        });
-      } catch (error) {
-        logger.error(error);
-      }
+          deal_status: ConstantMembers.DEAL_STATUS.FUNDED,
+          escrow_amount: event.result.totalEscrowAmount.toString(),
+          fund_tx_hash: event.transaction,
+        },
+        { id: event.result.dealId }
+      );
     }
   );
+
   tronContract[ConstantMembers.CONTRACT_EVENTS.TRON.ACCEPTED]().watch(
     async (err, event) => {
       if (err)
@@ -147,20 +152,26 @@ const { HelperFunction } = require("../../common/helpers"),
           `Error with "${ConstantMembers.CONTRACT_EVENTS.TRON.ACCEPTED}" event:`,
           err
         );
-      try {
-        await DealTable.updateStatusToAccepted({
-          dealStatus: ConstantMembers.DEAL_STATUS.ACCEPTED,
-          escrowWallet: HelperFunction.fromHex(
+
+      await TronQueries.updateDealDetails(
+        {
+          seller_wallet: BlockchainUtils.fromHex(
+            event.result.seller,
+            tronWebObject
+          ),
+          deal_status: ConstantMembers.DEAL_STATUS.ACCEPTED,
+          isDealLinkActive: false,
+        },
+        {
+          escrow_wallet: BlockchainUtils.fromHex(
             event.result.escrowWallet,
             tronWebObject
           ),
-          seller: HelperFunction.fromHex(event.result.seller, tronWebObject),
-        });
-      } catch (error) {
-        logger.error(error);
-      }
+        }
+      );
     }
   );
+
   tronContract[ConstantMembers.CONTRACT_EVENTS.TRON.RELEASE_FUND]().watch(
     async (err, event) => {
       if (err)
@@ -168,26 +179,28 @@ const { HelperFunction } = require("../../common/helpers"),
           `Error with "${ConstantMembers.CONTRACT_EVENTS.TRON.RELEASE_FUND}" event:`,
           err
         );
-      try {
-        await DealTable.updateStatusToReleased({
-          dealStatus: ConstantMembers.DEAL_STATUS.RELEASED,
-          escrowWallet: HelperFunction.fromHex(
-            event.result.escrowWallet,
-            tronWebObject
-          ),
-          releasedBy: HelperFunction.fromHex(
+
+      await TronQueries.updateDealDetails(
+        {
+          released_by: BlockchainUtils.fromHex(
             event.result.released_by,
             tronWebObject
           ),
-          amountReleased: event.result.amount_released.toString(),
-          commissionAmount: event.result.commission_amount.toString(),
-          txHash: event.transaction,
-        });
-      } catch (error) {
-        logger.error(error);
-      }
+          released_amount: event.result.amount_released.toString(),
+          commission_amount: event.result.commission_amount.toString(),
+          deal_status: ConstantMembers.DEAL_STATUS.RELEASED,
+          release_tx_hash: event.transaction,
+        },
+        {
+          escrow_wallet: BlockchainUtils.fromHex(
+            event.result.escrowWallet,
+            tronWebObject
+          ),
+        }
+      );
     }
   );
+
   tronContract[ConstantMembers.CONTRACT_EVENTS.TRON.WITHDRAW]().watch(
     async (err, event) => {
       if (err)
@@ -195,23 +208,29 @@ const { HelperFunction } = require("../../common/helpers"),
           `Error with "${ConstantMembers.CONTRACT_EVENTS.TRON.WITHDRAW}" event:`,
           err
         );
-      try {
-        await DealTable.updateStatusToRefunded({
-          dealStatus: ConstantMembers.DEAL_STATUS.REFUNDED,
-          escrowWallet: HelperFunction.fromHex(
+
+      await TronQueries.updateDealDetails(
+        {
+          released_by: BlockchainUtils.fromHex(
+            event.result._buyer,
+            tronWebObject
+          ),
+          released_amount: event.result.amount_withdrawn.toString(),
+          commission_amount: event.result.commission_amount.toString(),
+          deal_status: ConstantMembers.DEAL_STATUS.REFUNDED,
+          release_tx_hash: event.transaction,
+          isDealLinkActive: false,
+        },
+        {
+          escrow_wallet: BlockchainUtils.fromHex(
             event.result.escrowWallet,
             tronWebObject
           ),
-          buyer: HelperFunction.fromHex(event.result._buyer, tronWebObject),
-          amount_withdrawn: event.result.amount_withdrawn.toString(),
-          commission_amount: event.result.commission_amount.toString(),
-          txHash: event.transaction,
-        });
-      } catch (error) {
-        logger.error(error);
-      }
+        }
+      );
     }
   );
+
   tronContract[ConstantMembers.CONTRACT_EVENTS.TRON.SIX_MONTHS]().watch(
     async (err, event) => {
       if (err)
@@ -219,17 +238,18 @@ const { HelperFunction } = require("../../common/helpers"),
           `Error with "${ConstantMembers.CONTRACT_EVENTS.TRON.SIX_MONTHS}" event:`,
           err
         );
-      try {
-        await DealTable.updateStatusToOwnerWithdraw({
-          dealStatus: ConstantMembers.DEAL_STATUS.WITHDRAWN_BY_OWNER,
-          escrowWallet: event.result.escrowWallet,
-          _destAddr: event.result._destAddr,
-          amount_withdrawn: event.result.amount_withdrawn.toString(),
-          txHash: event.transaction,
-        });
-      } catch (error) {
-        logger.error(error);
-      }
+
+      await TronQueries.updateDealDetails(
+        {
+          released_by: event.result._destAddr,
+          released_amount: event.result.amount_withdrawn.toString(),
+          commission_amount: event.result.amount_withdrawn.toString(),
+          deal_status: ConstantMembers.DEAL_STATUS.WITHDRAWN_BY_OWNER,
+          release_tx_hash: event.transaction,
+          isDealLinkActive: false,
+        },
+        { escrow_wallet: event.result.escrowWallet }
+      );
     }
   );
 })();

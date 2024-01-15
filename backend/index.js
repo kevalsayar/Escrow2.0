@@ -5,15 +5,19 @@ const express = require("express"),
   cors = require("cors"),
   { serve, setup } = require("swagger-ui-express"),
   swaggerDoc = require("./openapi.json"),
-  { swaggerOptions } = require("./api/common/utils"),
+  { swaggerOptions } = require("./api/config/swagger.config"),
   { logger } = require("./api/config/logger.config"),
-  { ConstantMembers } = require("./api/common/members");
+  { ConstantMembers } = require("./api/common/members"),
+  { errorHandler } = require("./api/middleware/error.middleware");
 
 const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
+
 app.use(cors({ origin: "*" }));
+
 app.use(bodyParser.json());
+
 app.use(express.json());
 
 app.get(ConstantMembers.ENDPOINTS.ROOT, function (req, res) {
@@ -31,6 +35,8 @@ app.use(
 );
 
 app.use(ConstantMembers.ENDPOINTS.V1, indexRouter);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   logger.info(`Server's listening on port ${PORT}.`);

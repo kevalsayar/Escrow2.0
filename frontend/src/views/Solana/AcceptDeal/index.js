@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import SideBar from "../../../components/Sidebar";
-import Header from "../../../components/Solana/Header";
+import Header from "../../../components/Header";
+import { useAuth } from "../../../context/authContext";
+import phantomIcon from "../../../assets/icons/phantomIcon.jpg";
 import { Form, Button, Spinner } from "react-bootstrap";
 import styles from "./acceptDeal.module.css";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -26,88 +28,82 @@ const AcceptDeal = () => {
   const [loading, setLoading] = useState(false);
   const [isBuyer, setIsBuyer] = useState(false);
   const { solanaAddr, acceptDeal } = useSolana();
+  const { user } = useAuth();
+
+  const deal_id = searchParams.get("id");
+  const dealIdObj = { deal_id: deal_id };
 
   useEffect(() => {
     getDealData();
   }, [solanaAddr]);
 
   const getDealData = async () => {
-    const deal_id = searchParams.get("id");
-    await APIcall(API_METHODS.GET, ROUTES.SOLDEALS.acceptDeal, {
-      params: { deal_id: deal_id },
-    })
-      .then(async function (response) {
-        if (response?.data?.code === STATUS_CODES.SUCCESS) {
-          await APIcall(API_METHODS.GET, ROUTES.SOLDEALS.getDeals, {
-            params: { deal_id: deal_id },
-          })
-            .then(async function (response) {
-              const amountInEther = fromLamport(
-                response?.data?.data[0]?.escrow_amount
-              );
-
-              if (solanaAddr === response?.data?.data[0].buyer_wallet) {
-                setIsBuyer(true);
-                setDisable(true);
-                setLoading(true);
-              }
-              setTitle(response?.data?.data[0]?.deal_title);
-              setDescription(response?.data?.data[0]?.deal_description);
-              setAmount(amountInEther);
-            })
-            .catch(function (error) {
-              console.log(error);
-            });
+    try {
+      const acceptDealRes = await APIcall(
+        API_METHODS.GET,
+        ROUTES.SOLDEALS.acceptDeal,
+        {
+          params: dealIdObj,
         }
-      })
-      .catch(function (error) {
-        if (error?.response?.status === STATUS_CODES.BAD_REQUEST) {
-          toastMessage(
-            errorMessage.LINK_INACTIVE,
-            "toast_link_inactive",
-            TOAST_RESPONSE.ERROR
-          );
-          navigate(clientRoutes.transactions);
-        }
-      });
-  };
-  const handleAccept = async () => {
-    setLoading(true);
-    const deal_id = searchParams.get("id");
-    if (solanaAddr) {
-      let result = await acceptDeal(deal_id);
-      if (result) {
-        let bodyDealID = {
-          deal_id: deal_id,
-        };
-        await APIcall(
-          API_METHODS.PATCH,
-          ROUTES.SOLDEALS.acceptDealSolana,
-          bodyDealID
-        )
-          .then(function (response) {
-            setLoading(false);
-            navigate(clientRoutes.transactions);
-          })
-          .catch(function (error) {
-            setLoading(false);
-          });
-      }
-      setLoading(false);
-    } else {
-      setLoading(false);
-      toastMessage(
-        errorMessage.INSTALL_METAMASK,
-        "toast_install",
-        TOAST_RESPONSE.ERROR
       );
+
+      if (acceptDealRes.code === STATUS_CODES.BAD_REQUEST) {
+        navigate(clientRoutes.transactions);
+        throw new Error(errorMessage.LINK_INACTIVE);
+      }
+
+      const getDealsRes = await APIcall(
+        API_METHODS.GET,
+        ROUTES.SOLDEALS.getDeals,
+        {
+          params: dealIdObj,
+        }
+      );
+
+      const amountInEther = fromLamport(getDealsRes?.data?.escrow_amount);
+
+      if (solanaAddr === getDealsRes?.data.buyer_wallet) {
+        setIsBuyer(true);
+        setDisable(true);
+        setLoading(true);
+      }
+
+      setTitle(getDealsRes?.data?.deal_title);
+      setDescription(getDealsRes?.data?.deal_description);
+      setAmount(amountInEther);
+    } catch (error) {
+      toastMessage(error.message, "error", TOAST_RESPONSE.ERROR);
+    }
+  };
+
+  const handleAccept = async () => {
+    try {
+      setLoading(true);
+
+      if (!solanaAddr) throw new Error(errorMessage.INSTALL_PHANTOM);
+
+      await acceptDeal(deal_id);
+
+      const acceptDealRes = await APIcall(
+        API_METHODS.PATCH,
+        ROUTES.SOLDEALS.acceptDealSolana,
+        dealIdObj
+      );
+
+      if (!acceptDealRes.status) throw new Error(acceptDealRes.message);
+
+      navigate(clientRoutes.transactions);
+    } catch (error) {
+      toastMessage(error.message, error.code, TOAST_RESPONSE.ERROR);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <React.Fragment>
       <SideBar />
-      <Header />
+      <Header account={user} walletIcon={phantomIcon} />
       <div className={styles.newDeal}>
         <>
           <span className={styles.heading}>Accept Deal</span>

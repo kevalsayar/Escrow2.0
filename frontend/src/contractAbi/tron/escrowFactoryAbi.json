@@ -1,0 +1,342 @@
+[
+    {
+        "inputs": [
+            {
+                "name": "escrowWallet",
+                "type": "address"
+            },
+            {
+                "name": "seller",
+                "type": "address"
+            }
+        ],
+        "name": "DealAccepted",
+        "type": "Event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "buyer",
+                "type": "address"
+            },
+            {
+                "name": "dealId",
+                "type": "string"
+            },
+            {
+                "name": "totalEscrowAmount",
+                "type": "uint256"
+            }
+        ],
+        "name": "DealFunded",
+        "type": "Event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "released_by",
+                "type": "address"
+            },
+            {
+                "name": "escrowWallet",
+                "type": "address"
+            },
+            {
+                "name": "amount_released",
+                "type": "uint256"
+            },
+            {
+                "name": "commission_amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "DealReleaseFund",
+        "type": "Event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_destAddr",
+                "type": "address"
+            },
+            {
+                "name": "escrowWallet",
+                "type": "address"
+            },
+            {
+                "name": "amount_withdrawn",
+                "type": "uint256"
+            }
+        ],
+        "name": "DealSixMonths",
+        "type": "Event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "buyer",
+                "type": "address"
+            },
+            {
+                "name": "escrowWallet",
+                "type": "address"
+            },
+            {
+                "name": "amount_withdrawn",
+                "type": "uint256"
+            },
+            {
+                "name": "commission_amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "DealWithdraw",
+        "type": "Event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "version",
+                "type": "uint8"
+            }
+        ],
+        "name": "Initialized",
+        "type": "Event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "NewProxyAddress",
+                "type": "address"
+            },
+            {
+                "name": "dealId",
+                "type": "string"
+            },
+            {
+                "name": "commissionRate",
+                "type": "uint256"
+            },
+            {
+                "name": "minimumEscrowAmount",
+                "type": "uint256"
+            },
+            {
+                "name": "commissionWallet",
+                "type": "address"
+            }
+        ],
+        "name": "NewProxyAddress",
+        "type": "Event"
+    },
+    {
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "previousOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferred",
+        "type": "Event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_dealId",
+                "type": "string"
+            }
+        ],
+        "name": "acceptDeal",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_commissionRate",
+                "type": "uint256"
+            }
+        ],
+        "name": "changeCommissionRate",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    },
+    {
+        "outputs": [
+            {
+                "type": "uint256"
+            }
+        ],
+        "name": "commissionRateOfDeal",
+        "stateMutability": "View",
+        "type": "Function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_dealId",
+                "type": "string"
+            },
+            {
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "createEscrowProxy",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_dealId",
+                "type": "string"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "depositFunds",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    },
+    {
+        "outputs": [
+            {
+                "type": "address"
+            }
+        ],
+        "name": "escrowBeaconAddress",
+        "stateMutability": "View",
+        "type": "Function"
+    },
+    {
+        "outputs": [
+            {
+                "type": "address"
+            }
+        ],
+        "name": "escrowImplAddress",
+        "stateMutability": "View",
+        "type": "Function"
+    },
+    {
+        "outputs": [
+            {
+                "type": "address"
+            }
+        ],
+        "inputs": [
+            {
+                "name": "_dealId",
+                "type": "string"
+            }
+        ],
+        "name": "escrowProxyAddress",
+        "stateMutability": "View",
+        "type": "Function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_beacon",
+                "type": "address"
+            },
+            {
+                "name": "_commissionRate",
+                "type": "uint256"
+            },
+            {
+                "name": "_commissionWallet",
+                "type": "address"
+            },
+            {
+                "name": "_minimumEscrowAmount",
+                "type": "uint256"
+            }
+        ],
+        "name": "initialize",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    },
+    {
+        "outputs": [
+            {
+                "type": "uint256"
+            }
+        ],
+        "name": "minEscrowAmount",
+        "stateMutability": "View",
+        "type": "Function"
+    },
+    {
+        "outputs": [
+            {
+                "type": "address"
+            }
+        ],
+        "name": "owner",
+        "stateMutability": "View",
+        "type": "Function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_dealId",
+                "type": "string"
+            }
+        ],
+        "name": "postSixMonthsFundsWithdraw",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_dealId",
+                "type": "string"
+            }
+        ],
+        "name": "releaseFunds",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    },
+    {
+        "name": "renounceOwnership",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_dealId",
+                "type": "string"
+            }
+        ],
+        "name": "withdrawFunds",
+        "stateMutability": "Nonpayable",
+        "type": "Function"
+    }
+]

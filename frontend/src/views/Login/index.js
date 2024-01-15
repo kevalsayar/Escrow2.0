@@ -24,7 +24,6 @@ import { displayWalletAddress, toastMessage } from "../../utils/helper.utils";
 import { fetchAccounts } from "../../services/web3.services";
 import { useSolana } from "../../context/solaServiceContext";
 import { useConnect } from "../../context/connectContext";
-import { getProvider } from "../../services/solana.services";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import {
   connectToTron,
@@ -73,44 +72,46 @@ const Login = () => {
       style={{ backgroundImage: `url('${bgImage}')` }}
     >
       <div className={styles.mainDiv}>
-        <img src={EscrowLogo} className={`${styles.escrowLogo} mb-4`} />
+        <img
+          src={EscrowLogo}
+          alt="Escrow Logo"
+          className={`${styles.escrowLogo} mb-4`}
+        />
         <span className={styles.connect}>Connect your wallet</span>
         <div className="d-flex align-items-center">
           <img
             onClick={async () => {
-              if (await metamaskInstallationCheck()) {
-                if (await connectToMetaMask()) {
-                  toastMessage(
-                    `Connected with ${displayWalletAddress(
-                      (await fetchAccounts())[0],
-                      5
-                    )}`,
-                    "toast_address_success",
-                    TOAST_RESPONSE.SUCCESS
-                  );
-                  if (await switchChain(NETWORK_CHAINS.BINANCE_TEST_NETWORK)) {
-                    connect(walletTypes.metamask);
-                    toastMessage(
-                      successMessage.ON_BSC_TESTNET,
-                      "toast_success",
-                      TOAST_RESPONSE.SUCCESS
-                    );
-                    {
-                      !redirectPath && navigate(clientRoutes.transactions);
-                    }
-                  }
+              try {
+                if (!(await metamaskInstallationCheck())) {
+                  setTimeout(() => {
+                    window.open("https://metamask.io/download/", "_blank");
+                  }, 3000);
+                  throw new Error(errorMessage.INSTALL_METAMASK);
                 }
-              } else {
+
+                const userWalletAddress = (await connectToMetaMask())[0];
+
                 toastMessage(
-                  errorMessage.INSTALL_METAMASK,
-                  "toast_installation_error",
-                  TOAST_RESPONSE.ERROR
+                  `Connected with ${displayWalletAddress(
+                    userWalletAddress,
+                    5
+                  )}`,
+                  "toast_address_success",
+                  TOAST_RESPONSE.SUCCESS
                 );
-                window.open("https://metamask.io/download/", "_blank");
+
+                await switchChain(NETWORK_CHAINS.SEPOLIA);
+
+                connect(walletTypes.metamask);
+
+                !redirectPath && navigate(clientRoutes.transactions);
+              } catch (error) {
+                toastMessage(error.message, error.code, TOAST_RESPONSE.ERROR);
               }
             }}
             className={styles.metamaskLogo}
             src={MetamaskLogo}
+            alt="Metamask Logo"
           />
           <WalletMultiButton
             className={styles.hide}
@@ -121,23 +122,13 @@ const Login = () => {
             <img
               className={styles.metamaskLogo}
               src={PhantomLogo}
-              // onClick={async () => {
-              //   if (getProvider()) {
-              //     const walletAddress = await phantomConnect();
-              //     if (walletAddress) {
-              //       connect(walletTypes.phantom);
-              //       setSolanaAddr(walletAddress);
-              //     } else {
-              //     }
-              //   } else {
-              //     window.open("https://phantom.app/download", "_blank");
-              //   }
-              // }}
+              alt="Phantom Logo"
             />
           </WalletMultiButton>
           <img
             className={styles.metamaskLogo}
             src={TronLinkLogo}
+            alt="Tron"
             onClick={async () => {
               if (tronInstallationCheck()) {
                 toastMessage(

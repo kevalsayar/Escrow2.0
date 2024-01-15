@@ -1,64 +1,71 @@
-const router = require("express").Router();
-const { DealHandlers } = require("./deal.handlers");
-const { reqMiddleware } = require("../../middleware/request.middleware");
-const { validationSchemas } = require("./deal.validationSchema");
-const { ConstantMembers } = require("../../common/members");
+const router = require("express").Router(),
+  { DealHandlers } = require("./deal.handlers"),
+  { DealServices } = require("./deal.services"),
+  { reqMiddleware } = require("../../middleware/request.middleware"),
+  { validationSchemas } = require("./deal.validationSchema"),
+  { ConstantMembers } = require("../../common/members"),
+  asyncHandler = require("express-async-handler");
 
-router.get(
-  ConstantMembers.ENDPOINTS.ROOT,
-  [reqMiddleware.validateQueryParam(validationSchemas.getDealSchema)],
-  DealHandlers.getHandler
-);
+router
+  .route(ConstantMembers.ENDPOINTS.ROOT)
+  .get(
+    [reqMiddleware.validateData(validationSchemas.getDealSchema, "query")],
+    asyncHandler(DealHandlers.getHandler)
+  )
+  .post(
+    [reqMiddleware.validateData(validationSchemas.addDealReqSchema, "body")],
+    asyncHandler(DealHandlers.postHandler)
+  );
 
 router.get(
   ConstantMembers.ENDPOINTS.SOLANA.ACCEPT_LINK_VALID,
-  [reqMiddleware.validateQueryParam(validationSchemas.acceptDealSchema)],
-  DealHandlers.acceptHandler
-);
-
-router.post(
-  ConstantMembers.ENDPOINTS.ROOT,
-  [reqMiddleware.validateReqBody(validationSchemas.addDealReqSchema)],
-  DealHandlers.postHandler
+  [reqMiddleware.validateData(validationSchemas.acceptDealSchema, "query")],
+  asyncHandler(DealHandlers.acceptHandler)
 );
 
 router.post(
   ConstantMembers.ENDPOINTS.SEARCH,
   [
-    reqMiddleware.validateReqBody(validationSchemas.searchReqSchema),
-    reqMiddleware.validateQueryParam(validationSchemas.paginationParams),
+    reqMiddleware.validateData(validationSchemas.searchReqSchema, "body"),
+    reqMiddleware.validateData(validationSchemas.paginationParams, "query"),
   ],
-  DealHandlers.searchHandler
+  asyncHandler(DealHandlers.searchHandler)
 );
 
 router.patch(
   ConstantMembers.ENDPOINTS.SOLANA.SET_ESCROW_ADDRESS,
-  [reqMiddleware.validateReqBody(validationSchemas.acceptDealSchema)],
-  DealHandlers.setEscrowAddrHandler
+  [reqMiddleware.validateData(validationSchemas.dealIdSchema, "body")],
+  asyncHandler(
+    DealHandlers.solanaEscrowHandler(DealServices.setEscrowAccountId)
+  )
 );
 
 router.patch(
   ConstantMembers.ENDPOINTS.SOLANA.DEPOSIT,
-  [reqMiddleware.validateReqBody(validationSchemas.acceptDealSchema)],
-  DealHandlers.depositHandler
+  [reqMiddleware.validateData(validationSchemas.fundTransferSchema, "body")],
+  asyncHandler(DealHandlers.solanaEscrowHandler(DealServices.depositService))
 );
 
 router.patch(
   ConstantMembers.ENDPOINTS.SOLANA.ACCEPT_DEAL,
-  [reqMiddleware.validateReqBody(validationSchemas.acceptDealSchema)],
-  DealHandlers.acceptDealHandler
+  [reqMiddleware.validateData(validationSchemas.dealIdSchema, "body")],
+  asyncHandler(DealHandlers.solanaEscrowHandler(DealServices.acceptDealService))
 );
 
 router.patch(
   ConstantMembers.ENDPOINTS.SOLANA.RELEASE_FUND,
-  [reqMiddleware.validateReqBody(validationSchemas.acceptDealSchema)],
-  DealHandlers.releaseFundHandler
+  [reqMiddleware.validateData(validationSchemas.fundTransferSchema, "body")],
+  asyncHandler(
+    DealHandlers.solanaEscrowHandler(DealServices.releaseFundService)
+  )
 );
 
 router.patch(
   ConstantMembers.ENDPOINTS.SOLANA.WITHDRAW_FUND,
-  [reqMiddleware.validateReqBody(validationSchemas.acceptDealSchema)],
-  DealHandlers.withdrawFundHandler
+  [reqMiddleware.validateData(validationSchemas.fundTransferSchema, "body")],
+  asyncHandler(
+    DealHandlers.solanaEscrowHandler(DealServices.withdrawFundService)
+  )
 );
 
 module.exports = router;

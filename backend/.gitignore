@@ -1,3 +1,4 @@
 node_modules
 assets/logfiles
 .vscode
+.env

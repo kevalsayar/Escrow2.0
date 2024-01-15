@@ -24,7 +24,7 @@ const joi = require("joi"),
     }),
   searchValue = joi.string().min(3).label("Search Value");
 
-const valSchemas = function () {
+const valSchemas = () => {
   const addDealReqSchema = joi.object({
     deal_title: deal_title.required().messages({
       "any.required": "Deal Title is a required parameter!",

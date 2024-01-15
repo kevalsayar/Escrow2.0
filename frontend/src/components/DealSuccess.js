@@ -1,5 +1,5 @@
 import PageTwo from "../assets/images/PageTwo.svg";
-import styles from "../views/Binance/NewDeal/newDeal.module.css";
+import styles from "../views/Sepolia/NewDeal/newDeal.module.css";
 import { Form, Button, Overlay, Tooltip } from "react-bootstrap";
 import copyIcon from "../assets/icons/copyIcon.png";
 import shareIcon from "../assets/icons/shareIcon.png";

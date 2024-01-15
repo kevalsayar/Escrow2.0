@@ -6,7 +6,6 @@ import {
   CONTRACT_LISTENER,
 } from "../utils/constants.utils";
 import { toastMessage } from "../utils/helper.utils";
-import { checkError } from "../utils/helper.utils";
 
 export const web3 = new Web3(window.ethereum);
 
@@ -14,66 +13,46 @@ export const web3 = new Web3(window.ethereum);
  * @description Metamask's installation check.
  * @returns {Boolean} - true if installed.
  */
-export const metamaskInstallationCheck = () => {
-  if (window.ethereum && window.ethereum.isMetaMask) return true;
-  else {
-    return false;
-  }
-};
+export const metamaskInstallationCheck = () =>
+  !!(window.ethereum && window.ethereum.isMetaMask);
 
 /**
  * @description Connecting user with metamask.
  * @returns {(Object | Boolean)} - returns object if no error's thrown, else boolean.
  */
 export const connectToMetaMask = async () => {
-  const accounts = await web3.eth.getAccounts();
-  if (accounts.length > 0) {
-    return accounts;
-  } else {
-    try {
-      const accounts = await web3.currentProvider.request({
-        method: "eth_requestAccounts",
-      });
-      return accounts;
-    } catch (error) {
-      checkError(error);
-      return false;
-    }
-  }
+  const accountAddresses = await web3.eth.getAccounts();
+
+  if (accountAddresses.length) return accountAddresses;
+  else
+    return await web3.currentProvider.request({
+      method: "eth_requestAccounts",
+    });
 };
 
 export const fetchAccounts = async () => await web3.eth.getAccounts();
 
-// TODO: Change to mainnet pre-deployment.
 /**
  * @description Adds BSC Testnet chain for the user.
  * @returns {Boolean} - true if no error's thrown else false.
  */
-
-export const addChain = async (network) => {
-  try {
-    await web3.currentProvider.request({
-      method: "wallet_addEthereumChain",
-      params: [
-        {
-          chainId: network.CHAINID,
-          chainName: network.CHAINNAME,
-          rpcUrls: [network.RPCURLS],
-          nativeCurrency: {
-            name: network.NATIVE_CURRENCY_NAME,
-            symbol: network.NATIVE_CURRENCY_SYMBOL,
-            decimals: network.NATIVE_CURRENCY_DECIMAL,
-          },
-          blockExplorerUrls: [network.BLOCK_EXPLORER_URL],
+export const addChain = async (network) =>
+  await web3.currentProvider.request({
+    method: "wallet_addEthereumChain",
+    params: [
+      {
+        chainId: network.CHAINID,
+        chainName: network.CHAINNAME,
+        rpcUrls: [network.RPCURLS],
+        nativeCurrency: {
+          name: network.NATIVE_CURRENCY_NAME,
+          symbol: network.NATIVE_CURRENCY_SYMBOL,
+          decimals: network.NATIVE_CURRENCY_DECIMAL,
         },
-      ],
-    });
-    return true;
-  } catch (error) {
-    checkError(error);
-    return false;
-  }
-};
+        blockExplorerUrls: [network.BLOCK_EXPLORER_URL],
+      },
+    ],
+  });
 
 export const switchChain = async (network) => {
   try {
@@ -85,55 +64,41 @@ export const switchChain = async (network) => {
   } catch (error) {
     if (error.code === 4902) {
       try {
-        let res = await addChain(network);
-        if (res) {
+        if (await addChain(network))
           if (await checkNetwork(network.CHAINID)) return true;
-        }
       } catch (error) {
-        console.log(error);
-        return false;
+        throw error;
       }
     }
+    throw error;
   }
 };
 
-export const importTokenIntoMetaMask = async (token) => {
-  try {
-    await web3.currentProvider.request({
-      method: "wallet_watchAsset",
-      params: {
-        type: "ERC20",
-        options: {
-          address: token.TOKEN_ADDRESS,
-          symbol: token.TOKEN_SYMBOL,
-          decimals: token.TOKEN_DECIMALS,
-          image: token.TOKEN_IMAGE,
-        },
+/**
+ * @description
+ * @param {*} token
+ * @returns
+ */
+export const importTokenIntoMetaMask = async (token) =>
+  await web3.currentProvider.request({
+    method: "wallet_watchAsset",
+    params: {
+      type: "ERC20",
+      options: {
+        address: token.TOKEN_ADDRESS,
+        symbol: token.TOKEN_SYMBOL,
+        decimals: token.TOKEN_DECIMALS,
+        image: token.TOKEN_IMAGE,
       },
-    });
-    return true;
-  } catch (error) {
-    checkError(error);
-    return false;
-  }
-};
+    },
+  });
 
 /**
  * @description Ensures the user's on the BSC Testnet chain.
  * @returns {Boolean} - true if user's on the required chain.
  */
-export const checkNetwork = async (netId) => {
-  try {
-    const networkId = await web3.eth.getChainId();
-    // TODO: Change to BSC Mainnet pre-deployment.
-    if (networkId === netId) {
-      return true;
-    }
-  } catch (error) {
-    console.log(error);
-    return false;
-  }
-};
+export const checkNetwork = async (netId) =>
+  (await web3.eth.getChainId()) === netId;
 
 /**
  * @description Initializes a smart contract object.
@@ -145,7 +110,7 @@ const initializeSmartContract = (abi, contractAddress) =>
   new web3.eth.Contract(abi, contractAddress);
 
 /**
- * Generic function to send a transaction to the smart contract.
+ * @description Generic function to send a transaction to the smart contract.
  * @param {String} contractFunction - contract's function name.
  * @param {Object} functionInput - contract's function's array of parameters.
  * @param {Object} sendInput - array of parameters necessary to send transaction.
@@ -170,27 +135,18 @@ export const sendSmartContract = (
       );
     })
     .on(CONTRACT_LISTENER.RECEIPT, function (receipt) {
-      if (receipt.status === true) {
+      if (receipt.status)
         toastMessage(
           successMessage.TRANSACTION_SUCCESS,
           "toast_tx_success",
           TOAST_RESPONSE.SUCCESS
         );
-      } else {
-        toastMessage(
-          errorMessage.TRANSACTION_FAIL,
-          "toast_tx_error",
-          TOAST_RESPONSE.ERROR
-        );
-      }
-    })
-    .on(CONTRACT_LISTENER.ERROR, function (error) {
-      checkError(error);
+      else throw new Error(errorMessage.TRANSACTION_FAIL);
     });
 };
 
 /**
- * Generic function to call a constant method from the smart contract.
+ * @description Generic function to call a constant method from the smart contract.
  * @param {String} contractFunction - contract's function name.
  * @param {Object} functionInputs - contract's function's array of parameters.
  * @returns {Object}

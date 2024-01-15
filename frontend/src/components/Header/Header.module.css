@@ -1,0 +1,54 @@
+.walletInput{
+    width: 240px !important;
+    display: inline-block !important;
+    margin: 0.8rem 0;
+    height: 42px !important;
+    border-radius: 0px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0.5rem 1.4rem 0.5rem 1rem !important;
+}
+
+.copyDiv{
+    height: 42px;
+    cursor: pointer;
+    display: flex !important;
+    margin: 0.8rem 0;
+    background: rgba(106, 112, 126, 0.1);
+    border: 1px solid #DDDFE1;
+}
+
+.image{
+    height: 30px;
+    margin: auto 8px;
+}
+
+.button{
+    width: 200px;
+    color: white;
+    height: 42px;
+    font-weight: 500;
+    border: 1px;
+    border-radius: 6px;
+    background: #1c2d3f;
+}
+
+.buttonDiv{
+    margin: auto 30px auto auto;
+}
+
+.header{
+    height: 11vh;
+    margin-left: 16vw;
+    background: #FFFFFF;
+    display: flex;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.imgDiv{
+    height: 42px;
+    display: flex !important;
+    margin: 0.8rem 0 0.8rem 0.8rem;
+    background: rgba(106, 112, 126, 0.1);
+    border: 1px solid #DDDFE1;
+}

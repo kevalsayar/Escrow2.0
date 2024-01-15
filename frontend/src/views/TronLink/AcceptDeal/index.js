@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import SideBar from "../../../components/Sidebar";
-import Header from "../../../components/TronLink/Header";
+import Header from "../../../components/Header";
+import { useAuth } from "../../../context/authContext";
+import tronLinkIcon from "../../../assets/icons/tronLinkIcon.png";
 import { Form, Button, Spinner } from "react-bootstrap";
 import styles from "./acceptDeal.module.css";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -16,7 +18,7 @@ import {
   STATUS_CODES,
   API_METHODS,
 } from "../../../utils/constants.utils";
-import escrowFactoryAbi from "../../../abi/tron/escrowFactoryAbi.json";
+import escrowFactoryAbi from "../../../contractAbi/tron/escrowFactoryAbi.json";
 import { toastMessage, APIcall } from "../../../utils/helper.utils";
 import {
   connectToTron,
@@ -35,6 +37,7 @@ const AcceptDeal = () => {
   const [disable, setDisable] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isBuyer, setIsBuyer] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     getDealData();
@@ -115,7 +118,7 @@ const AcceptDeal = () => {
   return (
     <React.Fragment>
       <SideBar />
-      <Header />
+      <Header account={user} walletIcon={tronLinkIcon} />
       <div className={styles.newDeal}>
         <>
           <span className={styles.heading}>Accept Deal</span>

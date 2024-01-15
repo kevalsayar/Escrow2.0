@@ -1,10 +1,7 @@
 import { useState, createContext, useContext, useEffect, useMemo } from "react";
-
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
   getProgram,
-  getFactoryAccountPk,
-  getEscrowAccountPk,
   confirmTx,
   createInitDeal,
   createEscrowParties,
@@ -13,15 +10,9 @@ import {
   createWithdrawFund,
   createNescrowId,
   getEscrowIdPk,
-  toSolana,
+  getProgramAccountPk,
 } from "../services/solana.services";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import {
-  TOAST_RESPONSE,
-  errorMessage,
-  successMessage,
-} from "../utils/constants.utils";
-import { toastMessage } from "../utils/helper.utils";
+import { CONTRACT_FUNCTIONS, errorMessage } from "../utils/constants.utils";
 
 const SolanaContext = createContext(null);
 
@@ -31,189 +22,149 @@ export const SolanaContextProvider = ({ children }) => {
   const [factory, setFactory] = useState(null);
   const [factoryId, setFactoryId] = useState(undefined);
   const [solanaAddr, setSolanaAddr] = useState(null);
+  const FACTORY_SEED = "factoryinitone";
 
   const program = useMemo(() => {
-    if (connection && wallet) {
-      return getProgram(connection, wallet);
-    }
+    if (connection && wallet) return getProgram(connection, wallet);
   }, [connection, wallet]);
 
   useEffect(() => {
-    if (connection && wallet) {
+    if (connection && wallet)
       if (!solanaAddr) setSolanaAddr(wallet.publicKey.toString());
-    }
   }, [wallet]);
 
   const updateStates = async () => {
-    if (program) {
-      try {
+    try {
+      if (checkProgramExistence())
         if (!factoryId) {
-          let tm = getFactoryAccountPk();
+          let tm = getProgramAccountPk([FACTORY_SEED]);
           setFactory(tm);
+
           let { lastId } = await program.account.factory.fetch(tm);
           setFactoryId(lastId.toNumber());
         }
-      } catch (error) {
-        console.log("failed to update states", error);
-      }
+    } catch (error) {
+      console.log("failed to update states", error);
     }
   };
 
+  const executeTransaction = async (
+    instructionName,
+    instructionArgs,
+    accounts
+  ) => {
+    try {
+      const txHash = await program.methods[instructionName](...instructionArgs)
+        .accounts(accounts)
+        .rpc();
+
+      await confirmTx(txHash, connection);
+
+      return txHash;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
+
+  const checkProgramExistence = () => {
+    if (!program) throw new Error(errorMessage.SOLANA_PROGRAM_ERROR);
+    return true;
+  };
+
   const newEscrowId = async (uuid) => {
-    if (!program) return;
+    checkProgramExistence();
+
     try {
       let { lastId } = await program.account.factory.fetch(factory);
       let fid = lastId.toNumber() + 1;
-      const escrowAdress = getEscrowIdPk(fid);
 
-      const txHash = await program.methods
-        .newEscrowId(uuid)
-        .accounts(createNescrowId(escrowAdress, wallet, factory))
-        .rpc();
-      await confirmTx(txHash, connection);
-      toastMessage(
-        successMessage.ESCROW_ID_CREATED,
-        "toast_escrow_id_success",
-        TOAST_RESPONSE.SUCCESS
+      await executeTransaction(
+        CONTRACT_FUNCTIONS.SOL.CREATE_ESCROW,
+        [uuid],
+        createNescrowId(getEscrowIdPk(fid), wallet, factory)
       );
+
       return fid;
     } catch (error) {
-      toastMessage(
-        errorMessage.ESCROW_ID_FAILURE,
-        "toast_escrow_id_failure",
-        TOAST_RESPONSE.ERROR
-      );
-      return null;
+      throw new Error(errorMessage.ESCROW_ID_FAILURE);
     }
   };
 
   const initializeDeal = async (id, uuid) => {
-    if (!program) return;
+    checkProgramExistence();
+
     try {
-      const escrowIdAdress = getEscrowIdPk(id);
-      const escrowAdress = getEscrowAccountPk(uuid);
-      const txHash = await program.methods
-        .initializeDeal()
-        .accounts(createInitDeal(escrowAdress, wallet, escrowIdAdress))
-        .rpc();
-      await confirmTx(txHash, connection);
-      toastMessage(
-        successMessage.DEAL_INITIATED,
-        "toast_init_success",
-        TOAST_RESPONSE.SUCCESS
+      await executeTransaction(
+        CONTRACT_FUNCTIONS.SOL.INITIALIZE_DEAL,
+        [],
+        createInitDeal(getProgramAccountPk([uuid]), wallet, getEscrowIdPk(id))
       );
+
       return true;
     } catch (error) {
-      toastMessage(
-        errorMessage.INIT_FAILURE,
-        "toast_init_failure",
-        TOAST_RESPONSE.ERROR
-      );
-      return null;
+      throw new Error(errorMessage.INIT_FAILURE);
     }
   };
 
   const depositSol = async (uuid, amount) => {
-    if (!program) return;
+    checkProgramExistence();
+
     try {
-      const escrowAdress = getEscrowAccountPk(uuid);
-      const txHash = await program.methods
-        .deposit(amount)
-        .accounts(createEscrowParties(escrowAdress, wallet))
-        .rpc();
-      await confirmTx(txHash, connection);
-      toastMessage(
-        successMessage.DEPOSIT_SUCCESS,
-        "toast_deposit_success",
-        TOAST_RESPONSE.SUCCESS
+      return await executeTransaction(
+        CONTRACT_FUNCTIONS.SOL.DEPOSIT_FUNDS,
+        [amount],
+        createEscrowParties(getProgramAccountPk([uuid]), wallet)
       );
-      return true;
     } catch (error) {
-      toastMessage(
-        errorMessage.DEPOSIT_FAILURE,
-        "toast_deposit_failure",
-        TOAST_RESPONSE.ERROR
-      );
-      return false;
+      throw new Error(errorMessage.DEPOSIT_FAILURE);
     }
   };
 
   const acceptDeal = async (uuid) => {
-    if (!program) return;
+    checkProgramExistence();
+
     try {
-      const escrowAdress = getEscrowAccountPk(uuid);
-      const txHash = await program.methods
-        .acceptDeal()
-        .accounts(createEscrowParties(escrowAdress, wallet))
-        .rpc();
-      await confirmTx(txHash, connection);
-      toastMessage(
-        successMessage.ACCEPT_SUCCESS,
-        "toast_accept_success",
-        TOAST_RESPONSE.SUCCESS
+      await executeTransaction(
+        CONTRACT_FUNCTIONS.SOL.ACCEPT_DEAL,
+        [],
+        createEscrowParties(getProgramAccountPk([uuid]), wallet)
       );
+
       return true;
     } catch (error) {
-      toastMessage(
-        errorMessage.ACCEPT_FAILURE,
-        "toast_accept_failure",
-        TOAST_RESPONSE.ERROR
-      );
-      return false;
+      throw new Error(errorMessage.ACCEPT_FAILURE);
     }
   };
 
   const releaseFund = async (uuid) => {
-    if (!program) return;
+    checkProgramExistence();
+
     try {
-      const escrowAdress = getEscrowAccountPk(uuid);
+      const escrowAdress = getProgramAccountPk([uuid]);
       const escrow = await program.account.escrow.fetch(escrowAdress);
       const reciever = findReciever(escrow, wallet.publicKey);
 
-      const txHash = await program.methods
-        .releaseFund()
-        .accounts(createReleaseFund(escrowAdress, wallet, reciever))
-        .rpc();
-      await confirmTx(txHash, connection);
-      toastMessage(
-        successMessage.RELEASE_SUCCESS,
-        "toast_release_success",
-        TOAST_RESPONSE.SUCCESS
+      return await executeTransaction(
+        CONTRACT_FUNCTIONS.SOL.RELEASE_FUND,
+        [],
+        createReleaseFund(escrowAdress, wallet, reciever)
       );
-      return true;
     } catch (error) {
-      toastMessage(
-        errorMessage.RELEASE_FAILURE,
-        "toast_release_failure",
-        TOAST_RESPONSE.ERROR
-      );
-      return false;
+      throw new Error(errorMessage.RELEASE_FAILURE);
     }
   };
 
   const withdrawFund = async (uuid) => {
-    if (!program) return;
-    try {
-      const escrowAdress = getEscrowAccountPk(uuid);
+    checkProgramExistence();
 
-      const txHash = await program.methods
-        .withdrawFund()
-        .accounts(createWithdrawFund(escrowAdress, wallet))
-        .rpc();
-      await confirmTx(txHash, connection);
-      toastMessage(
-        successMessage.WITHDRAW_SUCCESS,
-        "toast_withdraw_success",
-        TOAST_RESPONSE.SUCCESS
+    try {
+      return await executeTransaction(
+        CONTRACT_FUNCTIONS.SOL.WITHDRAW_FUND,
+        [],
+        createWithdrawFund(getProgramAccountPk([uuid]), wallet)
       );
-      return true;
     } catch (error) {
-      toastMessage(
-        errorMessage.WITHDRAW_FAILURE,
-        "toast_withdraw_failure",
-        TOAST_RESPONSE.ERROR
-      );
-      return false;
+      throw new Error(errorMessage.WITHDRAW_FAILURE);
     }
   };
 

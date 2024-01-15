@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import SideBar from "../../../components/Sidebar";
-import Header from "../../../components/Solana/Header";
+import Header from "../../../components/Header";
 import styles from "./transactions.module.css";
 import searchIcon from "../../../assets/icons/searchIcon.png";
+import phantomIcon from "../../../assets/icons/phantomIcon.jpg";
 import "bootstrap/js/src/collapse.js";
 import CustomAccordion from "./CustomAccordion";
 import {
   ROUTES,
   FILTERS,
-  STATUS_CODES,
   API_METHODS,
   DEALS_PER_PAGE,
 } from "../../../utils/constants.utils";
@@ -18,6 +18,7 @@ import Spinner from "react-bootstrap/Spinner";
 import { useSolana } from "../../../context/solaServiceContext";
 import { RxCrossCircled } from "react-icons/rx";
 import { APIcall } from "../../../utils/helper.utils";
+import { useAuth } from "../../../context/authContext";
 
 const Transactions = () => {
   const [active, setActive] = useState(null);
@@ -32,126 +33,135 @@ const Transactions = () => {
   const [updateStatus, setUpdateStatus] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { solanaAddr } = useSolana();
+  const { user } = useAuth();
 
   const paginate = (pageNumber) => setCreatedCurrentPage(pageNumber);
+
   const searchPaginate = (pageNumber) => setCreatedSearchPage(pageNumber);
 
   const acceptedPaginate = (pageNumber) => setAcceptedCurrentPage(pageNumber);
+
   const acceptedSearchPaginate = (pageNumber) => {
     setAcceptedSearchPage(pageNumber);
   };
+
+  const createDealBody = (searchValue, filter) => ({
+    searchValue: searchValue,
+    wallet_address: solanaAddr,
+    filter: filter,
+  });
+
+  const createDealParams = (pageNum) => ({
+    page_num: pageNum + 1,
+    record_limit: DEALS_PER_PAGE,
+  });
+
+  const performSearch = async (
+    searchValue,
+    filter,
+    page,
+    setDeals,
+    setTotalPages
+  ) => {
+    try {
+      setIsLoading(true);
+
+      const response = await APIcall(
+        API_METHODS.POST,
+        ROUTES.SOLDEALS.searchDeal,
+        createDealBody(searchValue, filter),
+        { params: createDealParams(page) }
+      );
+
+      setDeals(response.data?.search_list);
+      setTotalPages(response.data?.total_pages);
+    } catch (error) {
+      setDeals([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchDeals = async (filter, currentPage, setDeals, setTotalPages) => {
+    try {
+      setIsLoading(true);
+
+      const response = await APIcall(
+        API_METHODS.GET,
+        ROUTES.SOLDEALS.getDeals,
+        {
+          params: {
+            wallet_address: solanaAddr,
+            page_num: currentPage + 1,
+            record_limit: DEALS_PER_PAGE,
+            filter,
+          },
+        }
+      );
+
+      setDeals(response?.data?.deal_list);
+      setTotalPages(response?.data?.total_pages);
+    } catch (error) {
+      setDeals([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const formik = useFormik({
     initialValues: {
       searchValue: "",
     },
     onSubmit: async (values) => {
-      if (values.searchValue?.length > 2) {
+      try {
         if (!solanaAddr) return;
-        const body = {
-          searchValue: values.searchValue,
-          wallet_address: solanaAddr,
-          filter: FILTERS.CREATED,
-        };
-        const acceptedDealsBody = {
-          searchValue: values.searchValue,
-          wallet_address: solanaAddr,
-          filter: FILTERS.ACCEPTED,
-        };
-        const params = {
-          page_num: createdSearchPage + 1,
-          record_limit: DEALS_PER_PAGE,
-        };
-        const acceptedParams = {
-          page_num: acceptedSearchPage + 1,
-          record_limit: DEALS_PER_PAGE,
-        };
-        await APIcall(API_METHODS.POST, ROUTES.SOLDEALS.searchDeal, body, {
-          params: params,
-        })
-          .then(function (response) {
-            setCreatedDeals(response?.data?.data?.search_list);
-            setCreatedTotalPages(response?.data?.data?.total_pages);
-          })
-          .catch(function (error) {
-            console.log(error);
-            if (error?.response?.status === STATUS_CODES.NOT_FOUND) {
-              setCreatedDeals([]);
-            }
-          });
-        await APIcall(
-          API_METHODS.POST,
-          ROUTES.SOLDEALS.searchDeal,
-          acceptedDealsBody,
-          {
-            params: acceptedParams,
-          }
-        )
-          .then(function (response) {
-            setAcceptedDeals(response?.data?.data?.search_list);
-            setAcceptedTotalPages(response?.data?.data?.total_pages);
-          })
-          .catch(function (error) {
-            console.log(error);
-            setAcceptedDeals([]);
-          });
-      }
+
+        if (values.searchValue?.length > 2) {
+          await performSearch(
+            values.searchValue,
+            FILTERS.CREATED,
+            createdSearchPage,
+            setCreatedDeals,
+            setCreatedTotalPages
+          );
+
+          await performSearch(
+            values.searchValue,
+            FILTERS.ACCEPTED,
+            acceptedSearchPage,
+            setAcceptedDeals,
+            setAcceptedTotalPages
+          );
+        }
+      } catch (error) {}
     },
   });
-  const getDeals = async () => {
-    if (!solanaAddr) return;
-    await APIcall(API_METHODS.GET, ROUTES.SOLDEALS.getDeals, {
-      params: {
-        wallet_address: solanaAddr,
-        page_num: createdCurrentPage + 1,
-        record_limit: DEALS_PER_PAGE,
-        filter: FILTERS.CREATED,
-      },
-    })
-      .then(async function (response) {
-        setCreatedDeals(response?.data?.data?.deal_list);
-        setCreatedTotalPages(response?.data?.data?.total_pages);
-        setIsLoading(false);
-      })
-      .catch(function (error) {
-        setIsLoading(false);
-        if (error?.response?.status === STATUS_CODES.NOT_FOUND) {
-          setCreatedDeals([]);
-        } else {
-          console.log(error);
-        }
-      });
-    await APIcall(API_METHODS.GET, ROUTES.SOLDEALS.getDeals, {
-      params: {
-        wallet_address: solanaAddr,
-        page_num: acceptedcurrentPage + 1,
-        record_limit: DEALS_PER_PAGE,
-        filter: FILTERS.ACCEPTED,
-      },
-    })
-      .then(function (response) {
-        setAcceptedDeals(response?.data?.data?.deal_list);
-        setAcceptedTotalPages(response?.data?.data?.total_pages);
-        setIsLoading(false);
-      })
-      .catch(function (error) {
-        setIsLoading(false);
-        if (error?.response?.status === STATUS_CODES.NOT_FOUND) {
-          setAcceptedDeals([]);
-        } else {
-          console.log(error);
-        }
-      });
+
+  const displayDeals = async () => {
+    await fetchDeals(
+      FILTERS.CREATED,
+      createdCurrentPage,
+      setCreatedDeals,
+      setCreatedTotalPages
+    );
+
+    await fetchDeals(
+      FILTERS.ACCEPTED,
+      acceptedcurrentPage,
+      setAcceptedDeals,
+      setAcceptedTotalPages
+    );
   };
 
   const handleGoBack = () => {
     setIsLoading(true);
-    getDeals();
+    displayDeals();
     formik.setFieldValue("searchValue", "");
   };
 
   useEffect(() => {
     setIsLoading(true);
-    getDeals();
+    displayDeals();
   }, [createdCurrentPage, acceptedcurrentPage, updateStatus, solanaAddr]);
 
   useEffect(() => {
@@ -171,10 +181,11 @@ const Transactions = () => {
       </div>
     );
   };
+
   return (
     <React.Fragment>
       <SideBar activeProp="Transactions" />
-      <Header />
+      <Header account={user} walletIcon={phantomIcon} />
       <div className={styles.main}>
         <div className={`${styles.heading} mt-3 ms-3 mb-2`}>
           <div className={`${styles.search} me-3`}>

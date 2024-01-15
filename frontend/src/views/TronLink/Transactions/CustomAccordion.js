@@ -7,7 +7,7 @@ import {
   SUN,
   TOOLTIP_TIMER,
 } from "../../../utils/constants.utils";
-import escrowFactoryAbi from "../../../abi/tron/escrowFactoryAbi.json";
+import escrowFactoryAbi from "../../../contractAbi/tron/escrowFactoryAbi.json";
 import { FiCopy } from "react-icons/fi";
 import { Overlay, Tooltip, Button, Modal, Spinner } from "react-bootstrap";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";

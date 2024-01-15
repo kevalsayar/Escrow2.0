@@ -1,10 +1,10 @@
 import { AnchorProvider, BN, Program } from "@project-serum/anchor";
 import { PublicKey, LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
-import IDL from "../abi/solana/idl.json";
+import IDL from "../contractAbi/solana/idl.json";
 
 export const RPCENDPOINT =
-  "https://lingering-wiser-seed.solana-devnet.discover.quiknode.pro/767776db1ec7da43350dc73af3009735f6276b13/";
-const FACTORY_SEED = "factoryinitone";
+  "https://boldest-dark-panorama.solana-devnet.quiknode.pro/8c6dc52408463ffa89ddc6a5c19b9aafae7c5c7a/";
+// const FACTORY_SEED = "factoryinitone";
 const ESCROW_SEED = "escrowinitone";
 const PROGRAM_ID = new PublicKey(
   "8pZkBXTmvLdudXm5R7JmtihPJ3C5anAd6N9EvGZzBJ3n"
@@ -13,35 +13,38 @@ const COMMISION_KEY = new PublicKey(
   "BpvinfQbUZ7HbxnLvFYGvWG1hgqHUL6gQP5REKi5LcJi"
 );
 
-export const getProgram = (connection, wallet) => {
-  const provider = new AnchorProvider(connection, wallet, {
-    commitment: "confirmed",
-  });
-  const program = new Program(IDL, PROGRAM_ID, provider);
-  return program;
+const accountObj = { systemProgram: SystemProgram.programId };
+
+export const getProvider = () => {
+  if ("phantom" in window) {
+    const provider = window.phantom?.solana;
+
+    if (provider?.isPhantom) return provider;
+  } else return false;
 };
 
-export const getProgramAccountPk = (seeds) => {
-  return PublicKey.findProgramAddressSync(seeds, PROGRAM_ID)[0];
-};
+export const toSolana = (amount) => new BN(amount * LAMPORTS_PER_SOL);
 
-export const getFactoryAccountPk = () => {
-  return getProgramAccountPk([FACTORY_SEED]);
-};
+export const fromLamport = (amount) => amount / LAMPORTS_PER_SOL;
 
-export const getEscrowIdPk = (id) => {
-  return getProgramAccountPk([
-    ESCROW_SEED,
-    new BN(id).toArrayLike(Buffer, "le", 8),
-  ]);
-};
+export const getProgram = (connection, wallet) =>
+  new Program(
+    IDL,
+    PROGRAM_ID,
+    new AnchorProvider(connection, wallet, {
+      commitment: "confirmed",
+    })
+  );
 
-export const getEscrowAccountPk = (uuid) => {
-  return getProgramAccountPk([uuid]);
-};
+export const getProgramAccountPk = (seeds) =>
+  PublicKey.findProgramAddressSync(seeds, PROGRAM_ID)[0];
+
+export const getEscrowIdPk = (id) =>
+  getProgramAccountPk([ESCROW_SEED, new BN(id).toArrayLike(Buffer, "le", 8)]);
 
 export const confirmTx = async (txHash, connection) => {
   const blockHashInfo = await connection.getLatestBlockhash();
+
   await connection.confirmTransaction({
     blockhash: blockHashInfo.blockhash,
     lastValidBlockHeight: blockHashInfo.lastValidBlockHeight,
@@ -49,100 +52,50 @@ export const confirmTx = async (txHash, connection) => {
   });
 };
 
-export const toSolana = (amount) => {
-  return new BN(amount * LAMPORTS_PER_SOL);
-};
-
-export const fromLamport = (amount) => {
-  return amount / LAMPORTS_PER_SOL;
-};
-
 export const createInitDeal = (escrowAdress, wallet, escrowid) => {
-  return {
-    escrow: escrowAdress,
-    payer: wallet?.publicKey,
-    escrowid: escrowid,
-    systemProgram: SystemProgram.programId,
-  };
+  accountObj.escrow = escrowAdress;
+  accountObj.payer = wallet?.publicKey;
+  accountObj.escrowid = escrowid;
+  return accountObj;
 };
 
 export const createNescrowId = (addr, wallet, factory) => {
-  return {
-    escrowid: addr,
-    signer: wallet?.publicKey,
-    factory: factory,
-    systemProgram: SystemProgram.programId,
-  };
+  accountObj.escrowid = addr;
+  accountObj.signer = wallet?.publicKey;
+  accountObj.factory = factory;
+  return accountObj;
 };
 
 export const createEscrowParties = (escrowAdress, wallet) => {
-  return {
-    escrow: escrowAdress,
-    signer: wallet?.publicKey,
-    systemProgram: SystemProgram.programId,
-  };
+  accountObj.escrow = escrowAdress;
+  accountObj.signer = wallet?.publicKey;
+  return accountObj;
 };
 
 export const createReleaseFund = (escrowAdress, wallet, reciever) => {
-  return {
-    escrow: escrowAdress,
-    signer: wallet?.publicKey,
-    reciever: reciever,
-    commisionAccount: COMMISION_KEY,
-    systemProgram: SystemProgram.programId,
-  };
+  accountObj.escrow = escrowAdress;
+  accountObj.signer = wallet?.publicKey;
+  accountObj.reciever = reciever;
+  accountObj.commisionAccount = COMMISION_KEY;
+  return accountObj;
 };
 
 export const createWithdrawFund = (escrowAdress, wallet) => {
-  return {
-    escrow: escrowAdress,
-    signer: wallet?.publicKey,
-    commisionAccount: COMMISION_KEY,
-    systemProgram: SystemProgram.programId,
-  };
+  accountObj.escrow = escrowAdress;
+  accountObj.signer = wallet?.publicKey;
+  accountObj.commisionAccount = COMMISION_KEY;
+  return accountObj;
 };
 
 export const findReciever = (escrow, signer) => {
-  let { owner, seller } = escrow;
+  let { owner: buyer, seller } = escrow;
 
-  owner = owner.toString();
+  buyer = buyer.toString();
   seller = seller.toString();
 
-  if (!owner || !seller) return;
+  if (!buyer || !seller) return;
 
-  const newSigner = signer.toString();
-  const newOwner = new PublicKey(owner);
-  const newSeller = new PublicKey(seller);
-
-  if (newSigner === owner) {
-    return newSeller;
-  } else if (newSigner === seller) {
-    return newOwner;
-  }
-
-  throw new Error("Invalid signer");
-};
-
-export const getProvider = () => {
-  if ("phantom" in window) {
-    const provider = window.phantom?.solana;
-
-    if (provider?.isPhantom) {
-      console.log("Phantom Installed");
-      return provider;
-    }
-  } else {
-    console.log("Phantom isn't installed!");
-    return false;
-  }
-};
-
-export const phantomConnect = async () => {
-  const provider = getProvider();
-  try {
-    const resp = await provider.connect();
-    return resp.publicKey.toString();
-  } catch (err) {
-    return false;
-  }
+  return signer.toString() === buyer
+    ? new PublicKey(seller)
+    : new PublicKey(buyer);
 };
